@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - EduAI Classroom</title>
+    <meta name="description"
+        content="Manage your courses, monitor student progress, and run live sessions from the EduAI teacher dashboard.">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+
+        .stat-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-slow);
+        }
+
+        .stat-card:hover {
+            border-color: rgba(99, 102, 241, .3);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .stat-card-icon {
+            position: absolute;
+            top: var(--space-4);
+            right: var(--space-4);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-card-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .stat-card-icon.brand {
+            background: rgba(99, 102, 241, .15);
+            color: var(--color-brand-400);
+        }
+
+        .stat-card-icon.success {
+            background: rgba(16, 185, 129, .15);
+            color: var(--color-success);
+        }
+
+        .stat-card-icon.warning {
+            background: rgba(245, 158, 11, .15);
+            color: var(--color-warning);
+        }
+
+        .stat-card-icon.accent {
+            background: rgba(139, 92, 246, .15);
+            color: var(--color-accent-400);
+        }
+
+        .stat-label {
+            font-size: var(--font-xs);
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: var(--space-2);
+        }
+
+        .stat-value {
+            font-size: var(--font-3xl);
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: var(--space-2);
+        }
+
+        .stat-change {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+        }
+
+        /* Course cards */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+
+        .course-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            transition: var(--transition-slow);
+        }
+
+        .course-card:hover {
+            border-color: rgba(99, 102, 241, .3);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .course-card-header {
+            padding: var(--space-5);
+            background: var(--gradient-brand);
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .course-card-icon {
+            position: absolute;
+            top: var(--space-4);
+            right: var(--space-4);
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, .15);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .course-card-icon svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .course-card-name {
+            font-size: var(--font-base);
+            font-weight: 700;
+            color: white;
+        }
+
+        .course-card-body {
+            padding: var(--space-4);
+        }
+
+        .course-card-desc {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+            margin-bottom: var(--space-4);
+            line-height: 1.6;
+            min-height: 36px;
+        }
+
+        .course-card-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+        }
+
+        .course-card-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--color-text-muted);
+        }
+
+        .course-card-stat svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .ai-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            margin-left: auto;
+        }
+
+        .ai-badge.enabled {
+            background: rgba(99, 102, 241, .15);
+            color: var(--color-brand-400);
+        }
+
+        .ai-badge.disabled {
+            background: rgba(255, 255, 255, .06);
+            color: var(--color-text-muted);
+        }
+
+        .course-card-actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .course-card-actions .btn {
+            flex: 1;
+        }
+
+        /* Section card */
+        .section-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+        }
+
+        .section-title {
+            font-size: var(--font-base);
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+            margin-top: 2px;
+        }
+
+        /* Activity */
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .activity-name {
+            font-size: var(--font-sm);
+            font-weight: 600;
+        }
+
+        .activity-detail {
+            font-size: 11px;
+            color: var(--color-text-muted);
+            margin-top: 2px;
+        }
+
+        .activity-score {
+            font-size: var(--font-xs);
+            font-weight: 700;
+            background: var(--gradient-brand);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            color: white;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        /* Sessions table */
+        .sessions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .sessions-table th {
+            text-align: left;
+            padding: var(--space-2) var(--space-4);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .sessions-table td {
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--font-sm);
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+        }
+
+        .sessions-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .sessions-table tr:hover td {
+            background: rgba(255, 255, 255, .025);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-8);
+            width: 90%;
+            max-width: 480px;
+            box-shadow: var(--shadow-xl);
+            animation: modalScaleIn .22s cubic-bezier(.34, 1.56, .64, 1) both;
+        }
+
+        @keyframes modalScaleIn {
+            from {
+                opacity: 0;
+                transform: scale(.9) translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-6);
+        }
+
+        .modal-title {
+            font-size: var(--font-xl);
+            font-weight: 800;
+        }
+
+        .modal-close-btn {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-text-muted);
+            transition: var(--transition-fast);
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(255, 255, 255, .12);
+            color: var(--color-text-primary);
+        }
+
+        .modal-close-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: var(--space-3);
+            margin-top: var(--space-6);
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-10);
+            color: var(--color-text-muted);
+            font-size: var(--font-sm);
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, .04) 25%, rgba(255, 255, 255, .08) 50%, rgba(255, 255, 255, .04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+            height: 32px;
+            margin-bottom: 8px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Sidebar */
+        .sidebar-collapse-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+        }
+
+        .sidebar-collapse-btn:hover {
+            color: var(--color-text-primary);
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .sidebar-collapse-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .sidebar.collapsed .sidebar-logo-text,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .user-name,
+        .sidebar.collapsed .user-role,
+        .sidebar.collapsed .nav-section-label {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-logo {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: var(--space-2);
+        }
+
+        .sidebar.collapsed .user-card {
+            justify-content: center;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .6);
+            z-index: 199;
+            backdrop-filter: blur(4px);
+        }
+
+        .hamburger-btn {
+            display: none;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 200;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                width: 240px !important;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- ════════ SIDEBAR ════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">E</div>
+                <span class="sidebar-logo-text" style="font-size:var(--font-sm);font-weight:700;">EduAI</span>
+                <button class="sidebar-collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <span class="nav-section-label">Teaching</span>
+                <a href="/teacher-dashboard.html" class="nav-item active"><i data-lucide="layout-dashboard"></i><span
+                        class="nav-label">Dashboard</span></a>
+                <a href="#" onclick="showCreateCourseModal();return false;" class="nav-item"><i
+                        data-lucide="plus-circle"></i><span class="nav-label">New Course</span></a>
+                <a href="/classroom.html" class="nav-item"><i data-lucide="video"></i><span class="nav-label">Live
+                        Session</span></a>
+                <span class="nav-section-label" style="margin-top:var(--space-3);">Admin</span>
+                <a href="#" class="nav-item"><i data-lucide="users"></i><span class="nav-label">Students</span></a>
+                <a href="#" class="nav-item"><i data-lucide="bar-chart-2"></i><span
+                        class="nav-label">Analytics</span></a>
+                <a href="#" class="nav-item"><i data-lucide="settings"></i><span class="nav-label">Settings</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar" id="sidebarAvatar"></div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarName"></div>
+                        <div class="user-role">Teacher</div>
+                    </div>
+                    <button onclick="logout()"
+                        style="background:none;border:none;color:var(--color-text-muted);cursor:pointer;padding:4px;display:flex;align-items:center;"
+                        aria-label="Logout">
+                        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- ════════ MAIN ════════ -->
+        <div class="main">
+            <header class="topbar">
+                <div class="topbar-left" style="display:flex;align-items:center;gap:var(--space-3);">
+                    <button class="hamburger-btn" onclick="openSidebar()" aria-label="Open menu">
+                        <i data-lucide="menu" style="width:18px;height:18px;"></i>
+                    </button>
+                    <div>
+                        <div style="font-size:var(--font-lg);font-weight:700;" id="greetingText">Loading…</div>
+                        <div style="font-size:var(--font-xs);color:var(--color-text-muted);margin-top:2px;"
+                            id="greetingDate"></div>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" aria-label="Notifications"><i data-lucide="bell"
+                            style="width:16px;height:16px;"></i></button>
+                    <button class="btn btn-primary btn-sm" onclick="showCreateCourseModal()">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i> Create Course
+                    </button>
+                </div>
+            </header>
+
+            <main class="content">
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon brand"><i data-lucide="book-open"></i></div>
+                        <div class="stat-label">Active Courses</div>
+                        <div class="stat-value" id="activeCourses">—</div>
+                        <div class="stat-change">Courses you manage</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon success"><i data-lucide="users"></i></div>
+                        <div class="stat-label">Total Students</div>
+                        <div class="stat-value" id="totalStudents">—</div>
+                        <div class="stat-change">Unique enrolled students</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon warning"><i data-lucide="trending-up"></i></div>
+                        <div class="stat-label">Avg Performance</div>
+                        <div class="stat-value" id="avgPerformance">—</div>
+                        <div class="stat-change">Average quiz score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon accent"><i data-lucide="video"></i></div>
+                        <div class="stat-label">Sessions Today</div>
+                        <div class="stat-value" id="sessionsToday">—</div>
+                        <div class="stat-change">Scheduled for today</div>
+                    </div>
+                </div>
+
+                <!-- Course Cards -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">My Courses</div>
+                            <div class="section-subtitle">All courses you manage</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="showCreateCourseModal()">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> New Course
+                        </button>
+                    </div>
+                    <div class="courses-grid" id="coursesGrid">
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Recent Student Activity</div>
+                            <div class="section-subtitle">Latest progress across your courses</div>
+                        </div>
+                    </div>
+                    <div id="activityContainer">
+                        <div class="skeleton"></div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Sessions -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Upcoming Sessions</div>
+                            <div class="section-subtitle">Scheduled live classes</div>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="sessions-table" id="sessionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Session Name</th>
+                                    <th>Start Time</th>
+                                    <th>Students</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsContainer">
+                                <tr>
+                                    <td colspan="5" class="empty-state">
+                                        <div class="skeleton"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ════════ MODAL ════════ -->
+    <div class="modal-overlay" id="createCourseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Create New Course</div>
+                <button class="modal-close-btn" onclick="hideCreateCourseModal()" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="createCourseForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="courseName">Course Name</label>
+                    <input type="text" class="form-input" id="courseName" placeholder="e.g. Introduction to Physics"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="courseSubject">Subject</label>
+                    <select class="form-input form-select" id="courseSubject" required onchange="onSubjectChange()">
+                        <option value="">Select Subject</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="courseClass">Class</label>
+                    <select class="form-input form-select" id="courseClass" required>
+                        <option value="">Select Class</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="courseDescription">Description</label>
+                    <textarea class="form-input" id="courseDescription" rows="3" placeholder="Brief course overview…"
+                        style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="aiMode">AI Mode</label>
+                    <select class="form-input form-select" id="aiMode">
+                        <option value="DISABLED">Disabled</option>
+                        <option value="EXPLAIN">Explain Mode</option>
+                        <option value="QUIZ">Quiz Mode</option>
+                        <option value="REVISION">Revision Mode</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Create Course</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateCourseModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ════════ EDIT COURSE MODAL ════════ -->
+    <div class="modal-overlay" id="editCourseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Edit Course</div>
+                <button class="modal-close-btn" onclick="hideEditCourseModal()" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="editCourseForm" novalidate>
+                <input type="hidden" id="editCourseId">
+                <div class="form-group">
+                    <label class="form-label" for="editCourseName">Course Name</label>
+                    <input type="text" class="form-input" id="editCourseName" placeholder="e.g. Introduction to Physics"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editCourseDescription">Description</label>
+                    <textarea class="form-input" id="editCourseDescription" rows="3"
+                        placeholder="Brief course overview…" style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editAiMode">AI Mode</label>
+                    <select class="form-input form-select" id="editAiMode">
+                        <option value="DISABLED">Disabled</option>
+                        <option value="EXPLAIN">Explain Mode</option>
+                        <option value="QUIZ">Quiz Mode</option>
+                        <option value="REVISION">Revision Mode</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditCourseModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ════════ SCHEDULE SESSION MODAL ════════ -->
+    <div class="modal-overlay" id="scheduleSessionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Schedule Live Session</div>
+                <button class="modal-close-btn" onclick="hideScheduleSessionModal()" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="scheduleSessionForm" novalidate>
+                <input type="hidden" id="scheduleSessionCourseId">
+                <div class="form-group">
+                    <label class="form-label" for="scheduleSessionName">Session Name</label>
+                    <input type="text" class="form-input" id="scheduleSessionName"
+                        placeholder="e.g. Sunday Morning Review" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Start Session</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideScheduleSessionModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <script src="/js/api.js"></script>
+    <script>
+        requireAuth();
+        requireRole(['TEACHER']);
+
+        let loadedCourses = [];
+        let myAssignments = [];
+
+        const user = getCurrentUser();
+
+        document.getElementById('sidebarAvatar').textContent = getInitials(user.fullName);
+        document.getElementById('sidebarName').textContent = user.fullName;
+
+        (function () {
+            const h = new Date().getHours();
+            const period = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+            document.getElementById('greetingText').textContent = `Good ${period}, ${user.fullName.split(' ')[0]} 👋`;
+            document.getElementById('greetingDate').textContent = new Date().toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+        })();
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function openSidebar() { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('sidebarOverlay').classList.add('active'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('sidebarOverlay').classList.remove('active'); }
+
+        function showCreateCourseModal() { document.getElementById('createCourseModal').classList.add('open'); }
+        function hideCreateCourseModal() { document.getElementById('createCourseModal').classList.remove('open'); document.getElementById('createCourseForm').reset(); }
+        document.getElementById('createCourseModal').addEventListener('click', e => { if (e.target === document.getElementById('createCourseModal')) hideCreateCourseModal(); });
+
+        function showEditCourseModal() { document.getElementById('editCourseModal').classList.add('open'); }
+        function hideEditCourseModal() { document.getElementById('editCourseModal').classList.remove('open'); document.getElementById('editCourseForm').reset(); }
+        document.getElementById('editCourseModal').addEventListener('click', e => { if (e.target === document.getElementById('editCourseModal')) hideEditCourseModal(); });
+
+        function showScheduleSessionModal(courseId) {
+            document.getElementById('scheduleSessionCourseId').value = courseId;
+            document.getElementById('scheduleSessionModal').classList.add('open');
+        }
+        function hideScheduleSessionModal() {
+            document.getElementById('scheduleSessionModal').classList.remove('open');
+            document.getElementById('scheduleSessionForm').reset();
+        }
+        document.getElementById('scheduleSessionModal').addEventListener('click', e => { if (e.target === document.getElementById('scheduleSessionModal')) hideScheduleSessionModal(); });
+
+        document.getElementById('scheduleSessionForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const courseId = document.getElementById('scheduleSessionCourseId').value;
+            const sessionName = document.getElementById('scheduleSessionName').value.trim();
+            if (!sessionName) { showWarning('Session name is required.'); return; }
+            try {
+                const session = await createSession(courseId, sessionName);
+                showSuccess('Session created! Joining now\u2026');
+                hideScheduleSessionModal();
+                setTimeout(() => {
+                    const sId = session.id || session.sessionId;
+                    if (sId) {
+                        window.location.href = `/classroom.html?sessionId=${sId}`;
+                    } else {
+                        showError('Could not identify the new session. Please join from the dashboard.');
+                        loadDashboard();
+                    }
+                }, 600);
+            } catch (err) {
+                showError(err.message || 'Failed to create session.');
+            }
+        });
+
+        document.getElementById('editCourseForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('editCourseId').value;
+            const name = document.getElementById('editCourseName').value.trim();
+            const description = document.getElementById('editCourseDescription').value.trim();
+            const aiMode = document.getElementById('editAiMode').value;
+            if (!name) { showWarning('Course name is required.'); return; }
+            try {
+                await updateCourse(id, name, description, aiMode);
+                showSuccess('Course updated successfully!');
+                hideEditCourseModal();
+                loadCourses(); // Changed from loadDashboard()
+            } catch (err) {
+                showError(err.message || 'Failed to update course.');
+            }
+        });
+
+        async function loadAssignments() {
+            try {
+                myAssignments = await apiCall('/academic/my-assignments') || [];
+                const subSelect = document.getElementById('courseSubject');
+
+                // Get unique subjects from assignments, filtering out any nulls
+                const uniqueSubs = Array.from(new Set(myAssignments
+                    .filter(a => a.subject && a.subject.id)
+                    .map(a => a.subject.id)))
+                    .map(id => myAssignments.find(a => a.subject.id === id).subject);
+
+                subSelect.innerHTML = '<option value="">Select Subject</option>' +
+                    uniqueSubs.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+                console.log('Teacher assignments loaded:', myAssignments.length);
+            } catch (err) {
+                console.error('Failed to load assignments:', err);
+                showError('Could not load your assigned subjects. Please contact admin.');
+            }
+        }
+
+        function onSubjectChange() {
+            const subId = document.getElementById('courseSubject').value;
+            const classSelect = document.getElementById('courseClass');
+            if (!subId) {
+                classSelect.innerHTML = '<option value="">Select Class</option>';
+                return;
+            }
+            const assignedClasses = myAssignments
+                .filter(a => a.subject.id === subId)
+                .map(a => a.academicClass);
+
+            classSelect.innerHTML = '<option value="">Select Class</option>' +
+                assignedClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        async function createCourse(data) {
+            return apiCall('/courses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        document.getElementById('createCourseForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = document.getElementById('courseName').value.trim();
+            const description = document.getElementById('courseDescription').value.trim();
+            const aiMode = document.getElementById('aiMode').value;
+            const subjectId = document.getElementById('courseSubject').value;
+            const classId = document.getElementById('courseClass').value;
+
+            if (!name || !subjectId || !classId) {
+                showWarning('Missing required fields');
+                return;
+            }
+
+            try {
+                // IMPORTANT: The backend Course entity expects nested objects for relationships
+                await createCourse({
+                    name,
+                    description,
+                    aiMode,
+                    teacher: { id: user.id },
+                    subject: { id: subjectId },
+                    academicClass: { id: classId }
+                });
+
+                showSuccess('Course created and mapped successfully!');
+                hideCreateCourseModal();
+                loadCourses();
+            } catch (err) {
+                showError(err.message || 'Failed to create course');
+            }
+        });
+
+        // ── Load everything from the API ──
+        // Refactored loadDashboard into individual functions
+        async function loadStats() {
+            try {
+                const data = await apiCall(`/dashboard/teacher/${user.id}/stats`);
+                renderStats(data);
+            } catch (err) {
+                console.error('Teacher stats load failed:', err);
+                showError('Could not load stats data.');
+            }
+        }
+
+        async function loadCourses() {
+            try {
+                const data = await apiCall(`/dashboard/teacher/${user.id}/stats`); // Assuming courses are part of this endpoint
+                renderCourses(data.courses || []);
+            } catch (err) {
+                console.error('Teacher courses load failed:', err);
+                showError('Could not load courses data.');
+                document.getElementById('coursesGrid').innerHTML = '<div class="empty-state">No data.</div>';
+            }
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const data = await apiCall(`/dashboard/teacher/${user.id}/stats`); // Assuming activity is part of this endpoint
+                renderActivity(data.recentActivity || []);
+            } catch (err) {
+                console.error('Teacher activity load failed:', err);
+                showError('Could not load activity data.');
+                document.getElementById('activityContainer').innerHTML = '<div class="empty-state">No data.</div>';
+            }
+        }
+
+        async function loadUpcomingSessions() {
+            try {
+                const data = await apiCall(`/dashboard/teacher/${user.id}/stats`); // Assuming sessions are part of this endpoint
+                renderSessions(data.upcomingSessions || []);
+            } catch (err) {
+                console.error('Teacher sessions load failed:', err);
+                showError('Could not load sessions data.');
+                document.getElementById('sessionsContainer').innerHTML = '<tr><td colspan="5" class="empty-state">No data.</td></tr>';
+            }
+        }
+
+        // Original loadDashboard function (kept for reference, but individual calls are now used)
+        async function loadDashboard() {
+            try {
+                const data = await apiCall(`/dashboard/teacher/${user.id}/stats`);
+                renderStats(data);
+                renderCourses(data.courses || []);
+                renderActivity(data.recentActivity || []);
+                renderSessions(data.upcomingSessions || []);
+                await loadAssignments(); // Ensure assignments are loaded for creating courses
+            } catch (err) {
+                console.error('Teacher dashboard load failed:', err);
+                showError('Could not load dashboard data. Please refresh.');
+                document.getElementById('coursesGrid').innerHTML = '<div class="empty-state">No data.</div>';
+                document.getElementById('activityContainer').innerHTML = '<div class="empty-state">No data.</div>';
+                document.getElementById('sessionsContainer').innerHTML = '<tr><td colspan="5" class="empty-state">No data.</td></tr>';
+            }
+        }
+
+        function renderStats(data) {
+            document.getElementById('activeCourses').textContent = data.activeCourses ?? '0';
+            document.getElementById('totalStudents').textContent = data.totalStudents ?? '0';
+            document.getElementById('avgPerformance').textContent = (data.avgPerformance != null ? data.avgPerformance + '%' : '—');
+            document.getElementById('sessionsToday').textContent = data.sessionsToday ?? '0';
+        }
+
+        const COURSE_GRADIENTS = [
+            'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            'linear-gradient(135deg,#10b981,#3b82f6)',
+            'linear-gradient(135deg,#f59e0b,#ef4444)',
+            'linear-gradient(135deg,#8b5cf6,#ec4899)',
+            'linear-gradient(135deg,#3b82f6,#06b6d4)',
+        ];
+
+        function renderCourses(courses) {
+            loadedCourses = courses;
+            const grid = document.getElementById('coursesGrid');
+            if (!courses.length) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+                No courses yet. <button class="btn btn-primary btn-sm" onclick="showCreateCourseModal()" style="margin-left:8px;">+ Create your first course</button>
+            </div>`;
+                return;
+            }
+            grid.innerHTML = courses.map((c, i) => `
+            <div class="course-card">
+                <div class="course-card-header" style="background:${COURSE_GRADIENTS[i % COURSE_GRADIENTS.length]};">
+                    <div class="course-card-icon"><i data-lucide="book-open"></i></div>
+                    <div class="course-card-name">${escHtml(c.name)}</div>
+                </div>
+                <div class="course-card-body">
+                    <div class="course-card-desc">${escHtml(c.description || 'No description provided.')}</div>
+                    <div class="course-card-meta">
+                        <div class="course-card-stat"><i data-lucide="users"></i>${c.studentCount} student${c.studentCount !== 1 ? 's' : ''}</div>
+                        <span class="ai-badge ${c.aiMode === 'DISABLED' ? 'disabled' : 'enabled'}">AI: ${escHtml(c.aiMode)}</span>
+                    </div>
+                    <div class="course-card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="editCourse('${c.id}')"><i data-lucide="edit-2" style="width:12px;height:12px;"></i> Edit</button>
+                        <button class="btn btn-primary btn-sm" onclick="handleStartSession('${c.id}')"><i data-lucide="video" style="width:12px;height:12px;"></i> Start Session</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderActivity(activities) {
+            const container = document.getElementById('activityContainer');
+            if (!activities.length) {
+                container.innerHTML = '<div class="empty-state">No recent student activity.</div>';
+                return;
+            }
+            container.innerHTML = activities.map(a => `
+            <div class="activity-item">
+                <div class="activity-avatar">${escHtml(getInitials(a.studentName))}</div>
+                <div style="flex:1;min-width:0;">
+                    <div class="activity-name">${escHtml(a.studentName)}</div>
+                    <div class="activity-detail">${escHtml(a.courseName)} · ${a.completion != null ? Math.round(a.completion) + '% complete' : ''} · ${a.quizzesTaken} quiz${a.quizzesTaken !== 1 ? 'zes' : ''} taken · ${escHtml(a.lastActivity)}</div>
+                </div>
+                ${a.quizScore != null ? `<span class="activity-score">${Math.round(a.quizScore)}%</span>` : ''}
+            </div>
+        `).join('');
+        }
+
+        function renderSessions(sessions) {
+            const tbody = document.getElementById('sessionsContainer');
+            if (!sessions.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No upcoming sessions scheduled.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = sessions.map(s => `
+            <tr>
+                <td>${escHtml(s.courseName)}</td>
+                <td>${escHtml(s.sessionName)}</td>
+                <td>${escHtml(s.startTime)}</td>
+                <td>${s.studentCount}</td>
+                <td><a href="/classroom.html?sessionId=${s.sessionId || s.id}" class="btn btn-primary btn-sm">Join</a></td>
+            </tr>
+        `).join('');
+        }
+
+        function editCourse(id) {
+            const course = loadedCourses.find(c => String(c.id) === String(id));
+            if (!course) { showError('Could not find course details.'); return; }
+            document.getElementById('editCourseId').value = course.id;
+            document.getElementById('editCourseName').value = course.name || '';
+            document.getElementById('editCourseDescription').value = course.description || '';
+            document.getElementById('editAiMode').value = course.aiMode || 'DISABLED';
+            showEditCourseModal();
+        }
+
+        function handleStartSession(courseId) {
+            showScheduleSessionModal(courseId);
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
+        }
+
+        function escAttr(str) {
+            return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        loadDashboard();
+    </script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
+
+</html>

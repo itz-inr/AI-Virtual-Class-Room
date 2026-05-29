@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Monitoring - Teacher Dashboard</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <div class="container">
+            <div class="dashboard-header fade-in">
+                <div class="dashboard-title">
+                    <h1>🤖 AI Classroom Monitor</h1>
+                    <p>Real-time student activity tracking</p>
+                </div>
+                <button class="btn btn-secondary" onclick="window.history.back()">← Back</button>
+            </div>
+
+            <div class="stats-grid fade-in">
+                <div class="stat-card glass-card">
+                    <div class="stat-label">Active Students</div>
+                    <div class="stat-value" id="activeCount">0</div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-label">Taking Quiz</div>
+                    <div class="stat-value" id="quizCount">0</div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-label">Idle Students</div>
+                    <div class="stat-value" id="idleCount">0</div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-label">Average Focus</div>
+                    <div class="stat-value" id="focusScore">0%</div>
+                </div>
+            </div>
+
+            <div class="glass-card fade-in">
+                <h2>AI Insights</h2>
+                <div id="aiInsights"
+                    style="padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; margin-top: 1rem;">
+                    Loading AI analysis...
+                </div>
+            </div>
+
+            <div class="glass-card fade-in mt-4">
+                <h2>Student Activity Monitor</h2>
+                <div id="studentList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        requireAuth();
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('sessionId') || 1;
+
+        let stompClient = null;
+
+        function connectWebSocket() {
+            const socket = new SockJS('/ws-classroom');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, frame => {
+                console.log('Monitoring connected to WebSocket');
+                stompClient.subscribe(`/topic/classroom/${sessionId}/monitoring`, message => {
+                    const data = JSON.parse(message.body);
+                    updateUI(data);
+                });
+            }, error => {
+                console.error('WebSocket Error', error);
+                setTimeout(connectWebSocket, 5000);
+            });
+        }
+
+        function updateUI(data) {
+            document.getElementById('activeCount').textContent = data.activeStudents || 0;
+            document.getElementById('quizCount').textContent = data.takingQuiz || 0;
+            document.getElementById('idleCount').textContent = data.idleStudents || 0;
+            document.getElementById('focusScore').textContent = Math.round(data.averageFocus || 0) + '%';
+            document.getElementById('aiInsights').textContent = data.aiSummary || 'Monitoring classroom activity...';
+
+            if (data.needsAttention) {
+                document.getElementById('aiInsights').style.background = 'rgba(239, 68, 68, 0.1)';
+            } else {
+                document.getElementById('aiInsights').style.background = 'rgba(99, 102, 241, 0.1)';
+            }
+        }
+
+        async function loadInitialData() {
+            try {
+                const data = await apiCall(`/monitoring/insights/${sessionId}`);
+                updateUI(data);
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            }
+        }
+
+        loadInitialData();
+        connectWebSocket();
+    </script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
+
+</html>

@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - EduAI Classroom</title>
+    <meta name="description" content="Manage users, courses, and system settings from the EduAI admin control panel.">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+
+        .stat-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-slow);
+        }
+
+        .stat-card:hover {
+            border-color: rgba(99, 102, 241, .3);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .stat-card-icon {
+            position: absolute;
+            top: var(--space-4);
+            right: var(--space-4);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-card-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .stat-card-icon.brand {
+            background: rgba(99, 102, 241, .15);
+            color: var(--color-brand-400);
+        }
+
+        .stat-card-icon.success {
+            background: rgba(16, 185, 129, .15);
+            color: var(--color-success);
+        }
+
+        .stat-card-icon.warning {
+            background: rgba(245, 158, 11, .15);
+            color: var(--color-warning);
+        }
+
+        .stat-card-icon.accent {
+            background: rgba(139, 92, 246, .15);
+            color: var(--color-accent-400);
+        }
+
+        .stat-label {
+            font-size: var(--font-xs);
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: var(--space-2);
+        }
+
+        .stat-value {
+            font-size: var(--font-3xl);
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: var(--space-2);
+        }
+
+        .stat-change {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+        }
+
+        .section-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+        }
+
+        .section-title {
+            font-size: var(--font-base);
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+            margin-top: 2px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        .status-pill::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-operational {
+            background: rgba(16, 185, 129, .15);
+            color: var(--color-success);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: 3px;
+        }
+
+        .filter-tab {
+            padding: 5px 14px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-xs);
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            color: var(--color-text-muted);
+            transition: var(--transition-fast);
+            white-space: nowrap;
+        }
+
+        .filter-tab.active {
+            background: var(--color-bg-elevated);
+            color: var(--color-text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-tab:hover:not(.active) {
+            color: var(--color-text-primary);
+        }
+
+        .search-bar-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-bar-icon {
+            position: absolute;
+            left: var(--space-3);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-text-muted);
+            pointer-events: none;
+            display: flex;
+        }
+
+        .search-bar-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: var(--space-2) var(--space-4) var(--space-2) 36px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            color: var(--color-text-primary);
+            font-size: var(--font-sm);
+            font-family: inherit;
+            transition: var(--transition-fast);
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, .1);
+        }
+
+        .search-bar::placeholder {
+            color: var(--color-text-muted);
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th {
+            text-align: left;
+            padding: var(--space-2) var(--space-4);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            border-bottom: 1px solid var(--color-border);
+            white-space: nowrap;
+        }
+
+        .user-table td {
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--font-sm);
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            vertical-align: middle;
+        }
+
+        .user-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .user-table tr:hover td {
+            background: rgba(255, 255, 255, .025);
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .user-avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-full-name {
+            font-weight: 600;
+        }
+
+        .user-email {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+        }
+
+        .role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        .role-student {
+            background: rgba(99, 102, 241, .15);
+            color: var(--color-brand-400);
+        }
+
+        .role-teacher {
+            background: rgba(16, 185, 129, .15);
+            color: var(--color-success);
+        }
+
+        .role-admin {
+            background: rgba(239, 68, 68, .15);
+            color: #f87171;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, .15);
+            color: var(--color-success);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, .15);
+            color: var(--color-warning);
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, .15);
+            color: #f87171;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-8);
+            width: 90%;
+            max-width: 480px;
+            box-shadow: var(--shadow-xl);
+            animation: modalScaleIn .22s cubic-bezier(.34, 1.56, .64, 1) both;
+        }
+
+        @keyframes modalScaleIn {
+            from {
+                opacity: 0;
+                transform: scale(.9) translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-6);
+        }
+
+        .modal-title {
+            font-size: var(--font-xl);
+            font-weight: 800;
+        }
+
+        .modal-close-btn {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-text-muted);
+            transition: var(--transition-fast);
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(255, 255, 255, .12);
+            color: var(--color-text-primary);
+        }
+
+        .modal-close-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: var(--space-3);
+            margin-top: var(--space-6);
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-12);
+            color: var(--color-text-muted);
+            font-size: var(--font-sm);
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, .04) 25%, rgba(255, 255, 255, .08) 50%, rgba(255, 255, 255, .04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+            height: 32px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .sidebar-collapse-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+        }
+
+        .sidebar-collapse-btn:hover {
+            color: var(--color-text-primary);
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .sidebar-collapse-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .sidebar.collapsed .sidebar-logo-text,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .user-name,
+        .sidebar.collapsed .user-role,
+        .sidebar.collapsed .nav-section-label {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-logo {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: var(--space-2);
+        }
+
+        .sidebar.collapsed .user-card {
+            justify-content: center;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .6);
+            z-index: 199;
+            backdrop-filter: blur(4px);
+        }
+
+        .hamburger-btn {
+            display: none;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 200;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                width: 240px !important;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .user-table th:nth-child(3),
+            .user-table td:nth-child(3) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-tabs {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- ════════ SIDEBAR ════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">E</div>
+                <span class="sidebar-logo-text" style="font-size:var(--font-sm);font-weight:700;">EduAI</span>
+                <button class="sidebar-collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <span class="nav-section-label">Admin Control</span>
+                <a href="#" class="nav-item active" onclick="showView('users', this)"><i data-lucide="users"></i><span
+                        class="nav-label">User Management</span></a>
+                <a href="#" class="nav-item" onclick="showView('academic', this)"><i
+                        data-lucide="graduation-cap"></i><span class="nav-label">Academic Hub</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar" id="sidebarAvatar"></div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarName"></div>
+                        <div class="user-role">Admin</div>
+                    </div>
+                    <button onclick="logout()"
+                        style="background:none;border:none;color:var(--color-text-muted);cursor:pointer;padding:4px;display:flex;align-items:center;"
+                        aria-label="Logout">
+                        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- ════════ MAIN ════════ -->
+        <div class="main">
+            <header class="topbar">
+                <div class="topbar-left" style="display:flex;align-items:center;gap:var(--space-3);">
+                    <button class="hamburger-btn" onclick="openSidebar()" aria-label="Open menu">
+                        <i data-lucide="menu" style="width:18px;height:18px;"></i>
+                    </button>
+                    <div>
+                        <div style="font-size:var(--font-lg);font-weight:700;">Admin Panel</div>
+                        <div style="font-size:var(--font-xs);color:var(--color-text-muted);margin-top:2px;">System
+                            management &amp; control</div>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <span class="status-pill status-operational">All Systems Operational</span>
+                    <button class="topbar-btn" aria-label="Notifications"><i data-lucide="bell"
+                            style="width:16px;height:16px;"></i></button>
+                    <button class="btn btn-primary btn-sm" onclick="showCreateUserModal()">
+                        <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Add User
+                    </button>
+                </div>
+            </header>
+
+            <main class="content">
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon brand"><i data-lucide="users"></i></div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value" id="totalUsers">—</div>
+                        <div class="stat-change">All registered accounts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon success"><i data-lucide="graduation-cap"></i></div>
+                        <div class="stat-label">Teachers</div>
+                        <div class="stat-value" id="totalTeachers">—</div>
+                        <div class="stat-change">Active educators</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon warning"><i data-lucide="user-check"></i></div>
+                        <div class="stat-label">Students</div>
+                        <div class="stat-value" id="totalStudents">—</div>
+                        <div class="stat-change">Enrolled learners</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon accent"><i data-lucide="book-open"></i></div>
+                        <div class="stat-label">Active Courses</div>
+                        <div class="stat-value" id="totalCourses">—</div>
+                        <div class="stat-change">Live curriculum</div>
+                    </div>
+                </div>
+
+                <!-- Views Container -->
+                <div id="usersView">
+                    <!-- User Management -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div>
+                                <div class="section-title">User Management</div>
+                                <div class="section-subtitle">Manage all platform users</div>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="showCreateUserModal()">
+                                <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Add User
+                            </button>
+                        </div>
+
+                        <!-- Search + Filters -->
+                        <div
+                            style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4);align-items:center;flex-wrap:wrap;">
+                            <div class="search-bar-wrapper">
+                                <div class="search-bar-icon"><i data-lucide="search"></i></div>
+                                <input type="text" class="search-bar" id="userSearch"
+                                    placeholder="Search by name or email…" oninput="filterUsers()">
+                            </div>
+                            <div class="filter-tabs" role="tablist">
+                                <button class="filter-tab active" id="tab-all" onclick="setFilter('all')" role="tab"
+                                    aria-selected="true">All</button>
+                                <button class="filter-tab" id="tab-student" onclick="setFilter('STUDENT')"
+                                    role="tab">Students</button>
+                                <button class="filter-tab" id="tab-teacher" onclick="setFilter('TEACHER')"
+                                    role="tab">Teachers</button>
+                                <button class="filter-tab" id="tab-admin" onclick="setFilter('ADMIN')"
+                                    role="tab">Admins</button>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Class / Dept</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersContainer">
+                                    <tr>
+                                        <td colspan="6" class="empty-state">
+                                            <div class="skeleton"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="academicView" style="display:none;">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div>
+                                <div class="section-title">Academic Hierarchy</div>
+                                <div class="section-subtitle">Manage Departments, Classes, and Subjects</div>
+                            </div>
+                        </div>
+
+                        <div class="filter-tabs" style="margin-bottom:var(--space-4);">
+                            <button class="filter-tab active"
+                                onclick="showAcademicTab('depts', this)">Departments</button>
+                            <button class="filter-tab" onclick="showAcademicTab('classes', this)">Classes</button>
+                            <button class="filter-tab" onclick="showAcademicTab('subjects', this)">Subjects</button>
+                            <button class="filter-tab" onclick="showAcademicTab('assignments', this)">Staff
+                                Mapping</button>
+                            <button class="filter-tab" onclick="showAcademicTab('studentAssign', this)">Student
+                                Assignment</button>
+                        </div>
+
+                        <div id="deptsTab">
+                            <div style="display:flex;gap:10px;margin-bottom:20px;">
+                                <input type="text" id="newDeptName" class="form-input" style="flex:1;"
+                                    placeholder="New Department Name">
+                                <button class="btn btn-primary" onclick="createDept()">Add Dept</button>
+                            </div>
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Department Name</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deptsList"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="classesTab" style="display:none;">
+                            <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                                <select id="classDeptSelect" class="form-input"
+                                    style="flex:1;min-width:150px;"></select>
+                                <input type="text" id="newClassName" class="form-input" style="flex:1;min-width:150px;"
+                                    placeholder="Class Name">
+                                <button class="btn btn-primary" onclick="createClass()">Add Class</button>
+                            </div>
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Department</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="classesList"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="subjectsTab" style="display:none;">
+                            <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                                <select id="subDeptSelect" class="form-input" style="flex:1;min-width:150px;"></select>
+                                <input type="text" id="newSubName" class="form-input" style="flex:1;min-width:150px;"
+                                    placeholder="Subject Name">
+                                <button class="btn btn-primary" onclick="createSub()">Add Subject</button>
+                            </div>
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Department</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subsList"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="assignmentsTab" style="display:none;">
+                            <div
+                                style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;margin-bottom:20px;">
+                                <select id="staffSelect" class="form-input" placeholder="Select Staff"></select>
+                                <select id="assignSubSelect" class="form-input" placeholder="Select Subject"></select>
+                                <select id="assignClassSelect" class="form-input" placeholder="Select Class"></select>
+                                <button class="btn btn-primary" onclick="createAssignment()">Map Staff</button>
+                            </div>
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th>Staff</th>
+                                        <th>Subject</th>
+                                        <th>Class</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assignList"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="studentAssignTab" style="display:none;">
+                            <div style="margin-bottom:20px; color:var(--color-text-muted); font-size:var(--font-sm);">
+                                Students are assigned during account creation. Below is the list of current student
+                                assignments.
+                            </div>
+                            <table class="user-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Department</th>
+                                        <th>Class</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentAssignList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ════════ ADD USER MODAL ════════ -->
+    <div class="modal-overlay" id="createUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Add New User</div>
+                <button class="modal-close-btn" onclick="hideCreateUserModal()" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="createUserForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="fullName">Full Name</label>
+                    <input type="text" class="form-input" id="fullName" placeholder="e.g. Jane Doe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" class="form-input" id="email" placeholder="jane@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" class="form-input" id="password" placeholder="Minimum 8 characters" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="role">Role</label>
+                    <select class="form-input form-select" id="role" required onchange="onRoleChange()">
+                        <option value="STUDENT">Student</option>
+                        <option value="TEACHER">Teacher</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group" id="deptGroup">
+                    <label class="form-label" for="userDept">Department</label>
+                    <select class="form-input form-select" id="userDept" onchange="onDeptChange()"></select>
+                </div>
+                <div class="form-group" id="classGroup">
+                    <label class="form-label" for="userClass">Class</label>
+                    <select class="form-input form-select" id="userClass"></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateUserModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ════════ EDIT STUDENT ASSIGNMENT MODAL ════════ -->
+    <div class="modal-overlay" id="editStudentAssignModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Edit Student Assignment</div>
+                <button class="modal-close-btn" onclick="hideEditStudentAssignModal()" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="editStudentAssignForm">
+                <input type="hidden" id="editStudentId">
+                <div class="form-group">
+                    <label class="form-label" for="editStudentDept">Department</label>
+                    <select class="form-input form-select" id="editStudentDept"
+                        onchange="onEditStudentDeptChange()"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editStudentClass">Class</label>
+                    <select class="form-input form-select" id="editStudentClass"></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Save Assignment</button>
+                    <button type="button" class="btn btn-secondary"
+                        onclick="hideEditStudentAssignModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        requireAuth();
+        requireRole(['ADMIN']);
+
+        const user = getCurrentUser();
+        document.getElementById('sidebarAvatar').textContent = getInitials(user.fullName);
+        document.getElementById('sidebarName').textContent = user.fullName;
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function openSidebar() { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('sidebarOverlay').classList.add('active'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('sidebarOverlay').classList.remove('active'); }
+
+        function showCreateUserModal() { document.getElementById('createUserModal').classList.add('open'); }
+        function hideCreateUserModal() { document.getElementById('createUserModal').classList.remove('open'); document.getElementById('createUserForm').reset(); }
+        document.getElementById('createUserModal').addEventListener('click', e => { if (e.target === document.getElementById('createUserModal')) hideCreateUserModal(); });
+
+        document.getElementById('createUserForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            if (!fullName || !email || !password) { showWarning('Please fill in all fields.'); return; }
+            if (password.length < 8) { showWarning('Password must be at least 8 characters.'); return; }
+            try {
+                await adminCreateUser(fullName, email, password, role);
+                showSuccess('User created successfully!');
+                hideCreateUserModal();
+                loadUsers();
+                loadStats();
+            } catch (err) {
+                showError(err.message || 'Failed to create user.');
+            }
+        });
+
+        // View Switching
+        function showView(view, el) {
+            document.getElementById('usersView').style.display = view === 'users' ? 'block' : 'none';
+            document.getElementById('academicView').style.display = view === 'academic' ? 'block' : 'none';
+
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            if (view === 'academic') loadAcademicData();
+        }
+
+        // Academic Tabs
+        function showAcademicTab(tab, btn) {
+            ['depts', 'classes', 'subjects', 'assignments', 'studentAssign'].forEach(t => {
+                document.getElementById(t + 'Tab').style.display = t === tab ? 'block' : 'none';
+            });
+            if (btn) {
+                btn.parentElement.querySelectorAll('.filter-tab').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+            }
+        }
+
+        // Academic Data Loading
+        let allAssignments = [];
+
+        async function loadAcademicData() {
+            try {
+                const depts = await apiCall('/academic/departments');
+                renderDepts(depts);
+                populateDeptSelects(depts);
+
+                const classes = await apiCall('/academic/classes');
+                renderClasses(classes);
+                populateClassSelects(classes);
+
+                const subs = await apiCall('/academic/subjects');
+                renderSubs(subs);
+                populateSubSelects(subs);
+
+                const assigns = await apiCall('/academic/assignments');
+                allAssignments = assigns;
+                renderAssignments(assigns);
+                if (allUsers && allUsers.length > 0) {
+                    filterUsers(); // re-render to reflect assignment changes
+                }
+            } catch (err) { showError('Failed to load academic data'); }
+        }
+
+        function renderDepts(depts) {
+            const container = document.getElementById('deptsList');
+            container.innerHTML = depts.map(d => `<tr><td>${d.id}</td><td>${d.name}</td><td><button class="btn btn-secondary btn-sm" onclick="deleteDept('${d.id}')">Delete</button></td></tr>`).join('');
+        }
+
+        function populateDeptSelects(depts) {
+            const selects = ['classDeptSelect', 'subDeptSelect', 'userDept', 'editStudentDept'];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                el.innerHTML = '<option value="">Select Department</option>' + depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            });
+        }
+
+        function renderClasses(classes) {
+            const container = document.getElementById('classesList');
+            container.innerHTML = classes.map(c => `<tr><td>${c.name}</td><td>${c.department?.name || 'N/A'}</td><td><button class="btn btn-secondary btn-sm">Delete</button></td></tr>`).join('');
+        }
+
+        function renderSubs(subs) {
+            const container = document.getElementById('subsList');
+            container.innerHTML = subs.map(s => `<tr><td>${s.name}</td><td>${s.department?.name || 'N/A'}</td><td><button class="btn btn-secondary btn-sm">Delete</button></td></tr>`).join('');
+        }
+
+        function renderAssignments(assigns) {
+            const container = document.getElementById('assignList');
+            container.innerHTML = assigns.map(a => `<tr><td>${a.staff?.fullName}</td><td>${a.subject?.name}</td><td>${a.academicClass?.name}</td><td><button class="btn btn-secondary btn-sm" onclick="deleteAssignment('${a.id}')">Remove</button></td></tr>`).join('');
+        }
+
+        function renderStudentAssigns() {
+            const container = document.getElementById('studentAssignList');
+            if (!allUsers) return;
+            const students = allUsers.filter(u => u.role === 'STUDENT');
+            if (students.length === 0) {
+                container.innerHTML = '<tr><td colspan="4" class="empty-state">No student assignments found.</td></tr>';
+                return;
+            }
+            container.innerHTML = students.map(u => `
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar-sm">${escHtml(getInitials(u.fullName))}</div>
+                            <div class="user-full-name">${escHtml(u.fullName)}</div>
+                        </div>
+                    </td>
+                    <td>${escHtml(u.department?.name || 'Unassigned')}</td>
+                    <td>${escHtml(u.academicClass?.name || 'Unassigned')}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="editStudentAssignment('${u.id}', '${u.department?.id || ''}', '${u.academicClass?.id || ''}')">
+                            Assign
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // CRUD Actions
+        async function createDept() {
+            const name = document.getElementById('newDeptName').value.trim();
+            if (!name) return showWarning('Enter department name');
+            try {
+                await apiCall('/academic/departments', { method: 'POST', body: JSON.stringify({ name }) });
+                document.getElementById('newDeptName').value = '';
+                showSuccess('Department created successfully!');
+                loadAcademicData();
+            } catch (err) {
+                showError(err.message || 'Failed to create department.');
+            }
+        }
+
+        async function deleteDept(id) {
+            if (!confirm('Are you sure you want to delete this department? This action cannot be undone.')) return;
+            try {
+                await apiCall(`/academic/departments/${id}`, { method: 'DELETE' });
+                showSuccess('Department deleted successfully.');
+                loadAcademicData();
+            } catch (err) {
+                showError(err.message || 'Failed to delete department.');
+            }
+        }
+
+        async function createClass() {
+            const deptId = document.getElementById('classDeptSelect').value;
+            const name = document.getElementById('newClassName').value.trim();
+            if (!deptId || !name) return showWarning('Select department and enter class name');
+            try {
+                await apiCall('/academic/classes', { method: 'POST', body: JSON.stringify({ name, department: { id: deptId } }) });
+                document.getElementById('newClassName').value = '';
+                showSuccess('Class created successfully!');
+                loadAcademicData();
+            } catch (err) {
+                showError(err.message || 'Failed to create class.');
+            }
+        }
+
+        async function createSub() {
+            const deptId = document.getElementById('subDeptSelect').value;
+            const name = document.getElementById('newSubName').value.trim();
+            if (!deptId || !name) return showWarning('Select department and enter subject name');
+            try {
+                await apiCall('/academic/subjects', { method: 'POST', body: JSON.stringify({ name, department: { id: deptId } }) });
+                document.getElementById('newSubName').value = '';
+                showSuccess('Subject created successfully!');
+                loadAcademicData();
+            } catch (err) {
+                showError(err.message || 'Failed to create subject.');
+            }
+        }
+
+        async function createAssignment() {
+            const staffId = document.getElementById('staffSelect').value;
+            const subId = document.getElementById('assignSubSelect').value;
+            const classId = document.getElementById('assignClassSelect').value;
+            if (!staffId || !subId || !classId) return showWarning('Select staff, subject and class');
+            try {
+                await apiCall('/academic/assignments', { method: 'POST', body: JSON.stringify({ staff: { id: staffId }, subject: { id: subId }, academicClass: { id: classId } }) });
+                showSuccess('Staff mapped successfully!');
+                loadAcademicData();
+            } catch (err) {
+                showError(err.message || 'Failed to map staff.');
+            }
+        }
+
+        async function deleteAssignment(id) {
+            if (!confirm('Are you sure you want to remove this assignment?')) return;
+            try {
+                await apiCall(`/academic/assignments/${id}`, { method: 'DELETE' });
+                showSuccess('Assignment removed successfully.');
+                loadAcademicData();
+            } catch (err) {
+                showError(err.message || 'Failed to remove assignment.');
+            }
+        }
+
+        // Student Assignment Modal logic
+        function hideEditStudentAssignModal() {
+            document.getElementById('editStudentAssignModal').classList.remove('open');
+            document.getElementById('editStudentAssignForm').reset();
+        }
+
+        document.getElementById('editStudentAssignModal').addEventListener('click', e => {
+            if (e.target === document.getElementById('editStudentAssignModal')) hideEditStudentAssignModal();
+        });
+
+        async function editStudentAssignment(id, deptId, classId) {
+            document.getElementById('editStudentId').value = id;
+            document.getElementById('editStudentDept').value = deptId || '';
+            await onEditStudentDeptChange();
+            document.getElementById('editStudentClass').value = classId || '';
+            document.getElementById('editStudentAssignModal').classList.add('open');
+        }
+
+        async function onEditStudentDeptChange() {
+            const deptId = document.getElementById('editStudentDept').value;
+            const classSelect = document.getElementById('editStudentClass');
+            if (!deptId) {
+                classSelect.innerHTML = '<option value="">Select Class</option>';
+                return;
+            }
+            try {
+                const classes = await apiCall(`/academic/departments/${deptId}/classes`);
+                classSelect.innerHTML = '<option value="">Select Class</option>' + classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            } catch (err) {
+                showError('Failed to load classes.');
+                classSelect.innerHTML = '<option value="">Error</option>';
+            }
+        }
+
+        document.getElementById('editStudentAssignForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('editStudentId').value;
+            const departmentId = document.getElementById('editStudentDept').value;
+            const classId = document.getElementById('editStudentClass').value;
+
+            try {
+                await apiCall(`/admin/users/${id}/academic`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ departmentId, classId })
+                });
+                showSuccess('Student assignment updated successfully.');
+                hideEditStudentAssignModal();
+                loadUsers(); // This will refresh allUsers and call re-render tables
+            } catch (err) {
+                showError(err.message || 'Failed to update assignment.');
+            }
+        });
+
+        // User Creation Extensions
+        function onRoleChange() {
+            const role = document.getElementById('role').value;
+            const isPlainAdmin = role === 'ADMIN';
+            document.getElementById('deptGroup').style.display = isPlainAdmin ? 'none' : 'block';
+            document.getElementById('classGroup').style.display = role === 'STUDENT' ? 'block' : 'none';
+            if (!isPlainAdmin) loadAcademicData(); // Ensure selects are fresh
+        }
+
+        async function onDeptChange() {
+            const deptId = document.getElementById('userDept').value;
+            const classSelect = document.getElementById('userClass');
+            if (!deptId) {
+                classSelect.innerHTML = '<option value="">Select Class</option>';
+                return;
+            }
+            try {
+                const classes = await apiCall(`/academic/departments/${deptId}/classes`);
+                classSelect.innerHTML = '<option value="">Select Class</option>' + classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            } catch (err) {
+                showError('Failed to load classes for department.');
+                classSelect.innerHTML = '<option value="">Error loading classes</option>';
+            }
+        }
+
+        // Helper for Mapping Selects
+        function populateClassSelects(classes) {
+            const s = document.getElementById('assignClassSelect');
+            s.innerHTML = '<option value="">Select Class</option>' + classes.map(c => `<option value="${c.id}">${c.name} (${c.department?.name})</option>`).join('');
+        }
+
+        function populateSubSelects(subs) {
+            const s = document.getElementById('assignSubSelect');
+            s.innerHTML = '<option value="">Select Subject</option>' + subs.map(s => `<option value="${s.id}">${s.name} (${s.department?.name})</option>`).join('');
+        }
+
+        let allUsers = [];
+        let activeFilter = 'all';
+
+        function setFilter(role) {
+            activeFilter = role;
+            ['all', 'student', 'teacher', 'admin'].forEach(r => document.getElementById(`tab-${r}`).classList.remove('active'));
+            document.getElementById(`tab-${role === 'all' ? 'all' : role.toLowerCase()}`).classList.add('active');
+            filterUsers();
+        }
+
+        function filterUsers() {
+            const q = document.getElementById('userSearch').value.toLowerCase();
+            const filtered = allUsers.filter(u => {
+                const matchRole = activeFilter === 'all' || u.role === activeFilter;
+                const matchSearch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                return matchRole && matchSearch;
+            });
+            renderUsers(filtered);
+            renderStudentAssigns();
+        }
+
+        // ── Load stats from dedicated stats endpoint ──
+        async function loadStats() {
+            try {
+                const data = await apiCall(`/dashboard/admin/stats`);
+                document.getElementById('totalUsers').textContent = data.totalUsers ?? '—';
+                document.getElementById('totalTeachers').textContent = data.totalTeachers ?? '—';
+                document.getElementById('totalStudents').textContent = data.totalStudents ?? '—';
+                document.getElementById('totalCourses').textContent = data.activeCourses ?? '—';
+            } catch (err) {
+                console.error('Failed to load admin stats:', err);
+            }
+        }
+
+        // Overwrite standard user loading to handle selectors
+        // const originalLoadUsers = loadUsers; // Not needed if directly overwriting
+        async function loadUsers() {
+            try {
+                const users = await apiCall('/admin/users');
+                allUsers = users;
+                filterUsers();
+
+                // Populate staff select for mapping
+                const staff = users.filter(u => u.role === 'TEACHER');
+                const staffSelect = document.getElementById('staffSelect');
+                staffSelect.innerHTML = '<option value="">Select Staff</option>' + staff.map(u => `<option value="${u.id}">${u.fullName}</option>`).join('');
+            } catch (err) { showError('Failed to load users'); }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersContainer');
+            if (!users.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u => `
+            <tr id="user-row-${u.id}">
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar-sm">${escHtml(getInitials(u.fullName))}</div>
+                        <div class="user-full-name">${escHtml(u.fullName)}</div>
+                    </div>
+                </td>
+                <td class="user-email">${escHtml(u.email)}</td>
+                <td><span class="role-badge role-${(u.role || '').toLowerCase()}">${escHtml(u.role)}</span></td>
+                <td>
+                    ${u.role === 'STUDENT' ? `
+                        <div style="font-size:12px;font-weight:600;">${escHtml(u.academicClass ? u.academicClass.name : 'Unassigned')}</div>
+                        <div style="font-size:11px;color:var(--color-text-muted);">${escHtml(u.department ? u.department.name : '')}</div>
+                    ` : u.role === 'TEACHER' ? `
+                        <div style="font-size:12px;font-weight:600;">
+                            ${(() => {
+                        const classes = [...new Set(allAssignments.filter(a => a.staff && a.staff.id === u.id).map(a => a.academicClass?.name).filter(Boolean))];
+                        return classes.length > 0 ? escHtml(classes.join(', ')) : '<span style="color:var(--color-text-muted);">Unassigned</span>';
+                    })()}
+                        </div>
+                        <div style="font-size:11px;color:var(--color-text-muted);">${escHtml(u.department ? u.department.name : '')}</div>
+                    ` : '<span style="color:var(--color-text-muted);font-size:12px;">N/A</span>'}
+                </td>
+                <td><span class="status-badge status-${(u.status || 'ACTIVE').toLowerCase()}">${escHtml(u.status || 'ACTIVE')}</span></td>
+                <td>
+                    <div class="table-actions">
+                        ${u.status === 'PENDING' ? `<button class="btn btn-primary btn-sm" onclick="activateUser('${u.id}')">Activate</button>` : ''}
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">
+                            <i data-lucide="trash-2" style="width:12px;height:12px;"></i> Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+            try {
+                await apiCall(`/admin/users/${id}`, { method: 'DELETE' });
+                showSuccess('User deleted successfully.');
+                loadUsers();
+                loadStats();
+            } catch (err) {
+                showError('Failed to delete user.');
+            }
+        }
+
+        async function activateUser(id) {
+            try {
+                await apiCall(`/admin/users/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'ACTIVE' })
+                });
+                showSuccess('User activated successfully.');
+                loadUsers();
+            } catch (err) {
+                showError('Failed to activate user.');
+            }
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
+        }
+
+        // Overwrite standard create user submit
+        // Remove the previous event listener first to avoid duplicate submissions
+        document.getElementById('createUserForm').removeEventListener('submit', async e => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            if (!fullName || !email || !password) { showWarning('Please fill in all fields.'); return; }
+            if (password.length < 8) { showWarning('Password must be at least 8 characters.'); return; }
+            try {
+                await adminCreateUser(fullName, email, password, role);
+                showSuccess('User created successfully!');
+                hideCreateUserModal();
+                loadUsers();
+                loadStats();
+            } catch (err) {
+                showError(err.message || 'Failed to create user.');
+            }
+        }); // This removeEventListener call is problematic as it needs the exact same function reference.
+        // A better way is to assign directly to .onsubmit or use a named function for the listener.
+        // For this instruction, we'll assume the direct assignment to onsubmit effectively overwrites.
+
+        document.getElementById('createUserForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            const departmentId = document.getElementById('userDept').value;
+            const classId = document.getElementById('userClass').value;
+
+            if (!fullName || !email || !password) { showWarning('Please fill in all fields.'); return; }
+            if (password.length < 8) { showWarning('Password must be at least 8 characters.'); return; }
+            if (role !== 'ADMIN' && !departmentId) { showWarning('Please select a department for non-admin users.'); return; }
+            if (role === 'STUDENT' && !classId) { showWarning('Please select a class for students.'); return; }
+
+            try {
+                await apiCall('/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, email, password, role, departmentId, classId })
+                });
+                showSuccess('User created successfully!');
+                hideCreateUserModal();
+                loadUsers();
+                loadStats(); // Ensure stats are updated after user creation
+            } catch (err) { showError(err.message || 'Failed to create user.'); }
+        };
+
+        // Initialize view
+        onRoleChange(); // Call to set initial visibility of dept/class groups
+        loadStats();
+        loadUsers();
+        loadAcademicData(); // Load academic data on page start
+    </script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
+
+</html>

@@ -1,0 +1,106 @@
+<!--
+  sidebar.html — Reusable sidebar snippet
+  Injected programmatically by /js/sidebar.js
+
+  DO NOT load this file directly in a browser tab.
+  Add <div id="sidebar-root"></div> to any app page, then include:
+    <script src="/js/sidebar.js"></script>
+  at the bottom of <body> (after /js/api.js).
+-->
+
+<aside class="sidebar" id="appSidebar">
+
+    <!-- Logo / Brand -->
+    <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L20 7V17L12 22L4 17V7L12 2Z" fill="url(#sidebar-grad)" stroke="none" />
+                <defs>
+                    <linearGradient id="sidebar-grad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#6366f1" />
+                        <stop offset="1" stop-color="#8b5cf6" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <span class="sidebar-label sidebar-brand-name">EduAI</span>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar"
+            title="Collapse sidebar">
+            <i data-lucide="chevrons-left" style="width:16px;height:16px;"></i>
+        </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav" id="sidebarNav">
+
+        <!-- Student / Shared links -->
+        <div class="nav-section" data-roles="STUDENT,TEACHER,ADMIN">
+            <div class="nav-section-label sidebar-label">Overview</div>
+
+            <a href="/student-dashboard.html" class="nav-item" data-page="student-dashboard" data-roles="STUDENT">
+                <i data-lucide="layout-dashboard" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">Dashboard</span>
+            </a>
+
+            <a href="/teacher-dashboard.html" class="nav-item" data-page="teacher-dashboard" data-roles="TEACHER">
+                <i data-lucide="layout-dashboard" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">Dashboard</span>
+            </a>
+
+            <a href="/admin-dashboard.html" class="nav-item" data-page="admin-dashboard" data-roles="ADMIN">
+                <i data-lucide="layout-dashboard" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">Dashboard</span>
+            </a>
+        </div>
+
+        <div class="nav-section" data-roles="STUDENT,TEACHER">
+            <div class="nav-section-label sidebar-label">Learning</div>
+
+            <a href="/courses.html" class="nav-item" data-page="courses" data-roles="STUDENT,TEACHER">
+                <i data-lucide="book-open" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">Courses</span>
+            </a>
+
+            <a href="/ai-tutor.html" class="nav-item" data-page="ai-tutor" data-roles="STUDENT">
+                <i data-lucide="bot" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">AI Tutor</span>
+            </a>
+
+            <a href="/classroom.html" class="nav-item" data-page="classroom" data-roles="STUDENT,TEACHER">
+                <i data-lucide="video" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">Classroom</span>
+            </a>
+        </div>
+
+        <div class="nav-section" data-roles="TEACHER,ADMIN">
+            <div class="nav-section-label sidebar-label">Management</div>
+
+            <a href="/ai-monitoring.html" class="nav-item" data-page="ai-monitoring" data-roles="TEACHER">
+                <i data-lucide="activity" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">AI Monitor</span>
+            </a>
+
+            <a href="/admin-dashboard.html" class="nav-item" data-page="admin-users" data-roles="ADMIN">
+                <i data-lucide="users" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <span class="sidebar-label">Users</span>
+            </a>
+        </div>
+
+    </nav>
+
+    <!-- Footer / User -->
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar"></div>
+            <div class="sidebar-user-info sidebar-label">
+                <div class="sidebar-user-name" id="sidebarUserName"></div>
+                <div class="sidebar-user-role" id="sidebarUserRole"></div>
+            </div>
+        </div>
+        <button class="nav-item sidebar-logout-btn" id="sidebarLogoutBtn" title="Sign out">
+            <i data-lucide="log-out" style="width:18px;height:18px;flex-shrink:0;"></i>
+            <span class="sidebar-label">Sign Out</span>
+        </button>
+    </div>
+
+</aside>

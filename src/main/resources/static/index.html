@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - EduAI</title>
+    <meta name="description" content="Sign in to your EduAI account to access your AI-powered classroom.">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0b14;
+            color: #f9fafb;
+            min-height: 100vh;
+            display: flex;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        /* ── LEFT PANEL ── */
+        .auth-left {
+            flex: 1;
+            min-width: 50%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 64px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-left-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 100% 80% at 30% 50%, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .auth-left-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 20px;
+            margin-bottom: 48px;
+            text-decoration: none;
+            color: #f9fafb;
+        }
+
+        .auth-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .auth-left h2 {
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .auth-left>.auth-left-content>p {
+            font-size: 15px;
+            color: #9ca3af;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+        .auth-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #d1d5db;
+        }
+
+        .auth-feature-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(99, 102, 241, 0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #818cf8;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .auth-right {
+            width: 480px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+        }
+
+        .auth-form-box {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .auth-form-box h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #f9fafb;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0;
+        }
+
+        .pw-toggle:hover {
+            color: #9ca3af;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #4b5563;
+            font-size: 12px;
+            margin: 20px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .social-btn {
+            width: 100%;
+            padding: 11px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            color: #d1d5db;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .auth-footer a {
+            color: #818cf8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-left {
+                display: none;
+            }
+
+            .auth-right {
+                width: 100%;
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="auth-left">
+        <div class="auth-left-bg"></div>
+        <div class="auth-left-content">
+            <a href="/landing.html" class="auth-logo">
+                <div class="auth-logo-icon"><i data-lucide="graduation-cap" style="width:18px;height:18px;"></i></div>
+                EduAI
+            </a>
+            <h2>Learn smarter,<br>not harder.</h2>
+            <p>Join thousands of students and educators using AI-powered tools to unlock their full potential and
+                accelerate learning outcomes.</p>
+            <div class="auth-feature">
+                <div class="auth-feature-icon">
+                    <i data-lucide="bot" style="width:16px;height:16px;"></i>
+                </div>
+                AI Tutor available 24/7
+            </div>
+            <div class="auth-feature">
+                <div class="auth-feature-icon">
+                    <i data-lucide="video" style="width:16px;height:16px;"></i>
+                </div>
+                Live HD video classrooms
+            </div>
+            <div class="auth-feature">
+                <div class="auth-feature-icon">
+                    <i data-lucide="bar-chart-2" style="width:16px;height:16px;"></i>
+                </div>
+                Real-time progress analytics
+            </div>
+            <div class="auth-feature">
+                <div class="auth-feature-icon">
+                    <i data-lucide="shield" style="width:16px;height:16px;"></i>
+                </div>
+                Enterprise-grade security
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-form-box">
+            <h1>Welcome back</h1>
+            <p class="subtitle">Sign in to your account to continue</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email address</label>
+                    <input type="email" id="email" class="form-input" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" required
+                            style="padding-right: 42px;">
+                        <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password visibility">
+                            <i data-lucide="eye" id="pwIcon" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" id="loginBtn">
+                    <span id="loginText">Sign In →</span>
+                    <span id="loginLoader" class="loading hidden"></span>
+                </button>
+            </form>
+
+
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (isAuthenticated()) {
+            const user = getCurrentUser();
+            const dashboardUrl = user.role === 'STUDENT'
+                ? '/student-dashboard.html'
+                : user.role === 'ADMIN'
+                    ? '/admin-dashboard.html'
+                    : '/teacher-dashboard.html';
+            window.location.href = dashboardUrl;
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const loginText = document.getElementById('loginText');
+            const loginLoader = document.getElementById('loginLoader');
+
+            try {
+                submitBtn.disabled = true;
+                loginText.classList.add('hidden');
+                loginLoader.classList.remove('hidden');
+
+                const data = await login(email, password);
+
+                // Block PENDING/REJECTED accounts from accessing the app
+                if (data.status === 'PENDING') {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    showError('Your account is pending admin approval. Please contact your administrator.');
+                    submitBtn.disabled = false;
+                    loginText.classList.remove('hidden');
+                    loginLoader.classList.add('hidden');
+                    return;
+                }
+
+                showSuccess('Login successful!');
+
+                // Redirect based on role
+                setTimeout(() => {
+                    const dashboardUrl = data.role === 'STUDENT'
+                        ? '/student-dashboard.html'
+                        : data.role === 'ADMIN'
+                            ? '/admin-dashboard.html'
+                            : '/teacher-dashboard.html';
+                    window.location.href = dashboardUrl;
+                }, 500);
+
+            } catch (error) {
+                showError(error.message || 'Invalid credentials');
+                submitBtn.disabled = false;
+                loginText.classList.remove('hidden');
+                loginLoader.classList.add('hidden');
+            }
+        });
+    </script>
+    <script>
+        // Password toggle
+        const pwToggle = document.getElementById('pwToggle');
+        const pwInput = document.getElementById('password');
+        const pwIcon = document.getElementById('pwIcon');
+        let pwVisible = false;
+
+        pwToggle.addEventListener('click', () => {
+            pwVisible = !pwVisible;
+            pwInput.type = pwVisible ? 'text' : 'password';
+            pwIcon.setAttribute('data-lucide', pwVisible ? 'eye-off' : 'eye');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+
+        // Init Lucide icons
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    </script>
+</body>
+
+</html>

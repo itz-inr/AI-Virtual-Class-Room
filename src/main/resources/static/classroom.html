@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Classroom - EduAI</title>
+    <meta name="description"
+        content="Join your live virtual classroom session on EduAI. HD video, AI notes, and real-time collaboration.">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #060810;
+            color: #f9fafb;
+            font-family: 'Inter', system-ui, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Topbar ── */
+        .classroom-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background: rgba(6, 8, 16, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 10;
+            flex-shrink: 0;
+            backdrop-filter: blur(12px);
+        }
+
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .session-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f9fafb;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: livePulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.35;
+            }
+        }
+
+        .session-timer {
+            font-size: 13px;
+            color: #6b7280;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        .participant-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .topbar-action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f9fafb;
+        }
+
+        .topbar-action-btn.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.25);
+            color: #f87171;
+        }
+
+        .topbar-action-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .topbar-action-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* ── Classroom Body ── */
+        .classroom-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Video Area ── */
+        .video-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 12px;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        /* ── View Controls ── */
+        .view-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .view-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .view-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            color: #d1d5db;
+        }
+
+        .view-btn.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.35);
+            color: #818cf8;
+        }
+
+        .view-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .panel-toggle-btn {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .panel-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            color: #d1d5db;
+        }
+
+        .panel-toggle-btn svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        /* ── Video Grid ── */
+        #videoGrid {
+            flex: 1;
+            display: grid;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        /* Gallery view */
+        #videoGrid.view-gallery {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-auto-rows: minmax(0, 1fr);
+        }
+
+        /* Speaker view */
+        #videoGrid.view-speaker {
+            grid-template-columns: 1fr 180px;
+            grid-template-rows: 1fr;
+        }
+
+        #videoGrid.view-speaker .video-tile:first-child {
+            grid-row: 1;
+            grid-column: 1;
+        }
+
+        #videoGrid.view-speaker .speaker-strip {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        #videoGrid.view-speaker .speaker-strip .video-tile {
+            flex-shrink: 0;
+            aspect-ratio: 16/9;
+        }
+
+        /* Presentation view */
+        #videoGrid.view-presentation {
+            grid-template-columns: 1fr 180px;
+            grid-template-rows: 1fr;
+        }
+
+        .presentation-placeholder {
+            background: #0d1117;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #4b5563;
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .presentation-placeholder svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.4;
+        }
+
+        .presentation-placeholder p {
+            font-size: 13px;
+        }
+
+        .participant-strip {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .participant-strip .video-tile {
+            flex-shrink: 0;
+            aspect-ratio: 16/9;
+        }
+
+        /* ── Video Tile ── */
+        .video-tile {
+            background: #0d1117;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: border-color 0.2s ease;
+        }
+
+        .video-tile.speaking {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+        }
+
+        .video-tile-bg {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0d1117, #111827);
+        }
+
+        .participant-avatar-tile {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .tile-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .tile-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #f9fafb;
+        }
+
+        .tile-icons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tile-icon {
+            width: 22px;
+            height: 22px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tile-icon svg {
+            width: 11px;
+            height: 11px;
+            color: #d1d5db;
+        }
+
+        .tile-icon.muted-icon {
+            background: rgba(239, 68, 68, 0.35);
+        }
+
+        .tile-icon.muted-icon svg {
+            color: #f87171;
+        }
+
+        .host-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(99, 102, 241, 0.85);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+            z-index: 11;
+        }
+
+        .video-off-overlay {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.2);
+            width: 100%;
+            height: 100%;
+        }
+
+        .video-off-overlay svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* ── Reactions Popup ── */
+        #reactionsPopup {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a2035;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: none;
+            gap: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        #reactionsPopup.open {
+            display: flex;
+        }
+
+        .reaction-btn {
+            font-size: 22px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 4px;
+            transition: transform 0.15s ease, background 0.15s ease;
+            line-height: 1;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.25);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            font-size: 32px;
+            pointer-events: none;
+            z-index: 9999;
+            animation: floatUp 2.5s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(-50%) translateY(-80vh);
+                opacity: 0;
+            }
+        }
+
+        /* ── Side Panel ── */
+        #sidePanel {
+            width: 320px;
+            background: #0d0f1e;
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: width 0.25s ease, opacity 0.25s ease;
+        }
+
+        #sidePanel.collapsed {
+            width: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            flex-shrink: 0;
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .panel-tab:hover {
+            color: #9ca3af;
+        }
+
+        .panel-tab.active {
+            color: #818cf8;
+            border-bottom-color: #6366f1;
+        }
+
+        .panel-tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .panel-tab-content.active {
+            display: flex;
+        }
+
+        /* Chat Tab */
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-msg {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            padding: 10px 12px;
+            max-width: 90%;
+            align-self: flex-start;
+        }
+
+        .chat-msg.own-msg {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            align-self: flex-end;
+        }
+
+        .chat-msg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .chat-msg-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #818cf8;
+        }
+
+        .chat-msg-time {
+            font-size: 10px;
+            color: #4b5563;
+        }
+
+        .chat-msg-text {
+            font-size: 13px;
+            color: #d1d5db;
+            line-height: 1.5;
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        #chatInput {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #f9fafb;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        #chatInput:focus {
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .chat-send-btn {
+            padding: 8px 14px;
+            background: #6366f1;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.15s ease;
+            font-family: inherit;
+        }
+
+        .chat-send-btn:hover {
+            background: #818cf8;
+        }
+
+        .chat-send-btn svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        /* People Tab */
+        #participantsList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .participant-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            transition: background 0.15s ease;
+        }
+
+        .participant-row:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .p-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .p-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .p-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f9fafb;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .p-role {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .p-icons {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .p-icon {
+            width: 22px;
+            height: 22px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .p-icon svg {
+            width: 11px;
+            height: 11px;
+            color: #9ca3af;
+        }
+
+        .p-icon.muted svg {
+            color: #f87171;
+        }
+
+        /* AI Notes Tab */
+        .ai-notes-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .ai-notes-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(99, 102, 241, 0.12);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-notes-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #818cf8;
+        }
+
+        .ai-notes-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f9fafb;
+        }
+
+        .ai-notes-sub {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .ai-typing-dots {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .ai-typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #6366f1;
+            animation: dotBounce 1.2s infinite;
+        }
+
+        .ai-typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .ai-typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotBounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* ── Controls Bar ── */
+        .controls-bar {
+            padding: 12px 24px;
+            background: rgba(6, 8, 16, 0.97);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            backdrop-filter: blur(16px);
+            position: relative;
+        }
+
+        .ctrl-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            cursor: pointer;
+            min-width: 64px;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            color: #f9fafb;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+
+        .ctrl-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .ctrl-btn span {
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .ctrl-btn.active {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+
+        .ctrl-btn.active span {
+            color: #818cf8;
+        }
+
+        .ctrl-btn.danger-active {
+            background: rgba(239, 68, 68, 0.18);
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .ctrl-btn.danger-active svg {
+            color: #f87171;
+        }
+
+        .ctrl-btn.danger-active span {
+            color: #f87171;
+        }
+
+        .ctrl-btn.end-btn {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.25);
+            color: #f87171;
+        }
+
+        .ctrl-btn.end-btn svg {
+            color: #f87171;
+        }
+
+        .ctrl-btn.end-btn span {
+            color: #f87171;
+        }
+
+        .ctrl-btn.end-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .ctrl-divider {
+            width: 1px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+
+        /* Start overlay */
+        .start-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            gap: 16px;
+        }
+
+        .start-overlay-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .start-overlay-icon svg {
+            width: 36px;
+            height: 36px;
+            color: white;
+        }
+
+        /* Custom scrollbar for panels */
+        #chatMessages::-webkit-scrollbar,
+        #participantsList::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        #chatMessages::-webkit-scrollbar-thumb,
+        #participantsList::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- ════════ SIDEBAR ════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">E</div>
+                <span class="sidebar-logo-text" style="font-size:var(--font-sm);font-weight:700;">EduAI</span>
+                <button class="sidebar-collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav" id="sidebarNav"></nav>
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar" id="sidebarAvatar"></div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarName"></div>
+                        <div class="user-role" id="sidebarRoleDisplay"></div>
+                    </div>
+                    <button onclick="logout()"
+                        style="background:none;border:none;color:var(--color-text-muted);cursor:pointer;padding:4px;display:flex;align-items:center;"
+                        aria-label="Logout">
+                        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- ════════ MAIN ════════ -->
+        <div class="main">
+            <header class="topbar">
+                <div class="topbar-left" style="display:flex;align-items:center;gap:var(--space-3);">
+                    <button class="hamburger-btn" onclick="openSidebar()" aria-label="Open menu">
+                        <i data-lucide="menu" style="width:18px;height:18px;"></i>
+                    </button>
+                    <div class="session-info">
+                        <span class="session-title" id="sessionNameDisplay">Loading…</span>
+                        <div class="live-badge" id="liveBadge" style="display:none;">
+                            <div class="live-dot"></div> LIVE
+                        </div>
+                        <span class="session-timer" id="timer">00:00</span>
+                        <div class="participant-pill" id="participantCount">
+                            <i data-lucide="users" style="width:13px;height:13px;opacity:.5;"></i>
+                            — participants
+                        </div>
+                    </div>
+                </div>
+                <div class="topbar-right" id="topbarActions"></div>
+            </header>
+
+            <div id="noSessionState"
+                style="display:none; flex:1; align-items:center; justify-content:center; flex-direction:column; gap:20px; background:#060810;">
+                <div
+                    style="width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,.05); display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="video-off" style="width:36px; height:36px; color:var(--color-text-muted);"></i>
+                </div>
+                <div style="text-align:center;">
+                    <h2 style="font-size:24px; font-weight:800; margin-bottom:8px;">No active session</h2>
+                    <p style="color:var(--color-text-muted);">This session has ended or the link is invalid.</p>
+                </div>
+                <a href="/student-dashboard.html" id="noSessionBackBtn" class="btn btn-primary">Back to Dashboard</a>
+            </div>
+
+            <!-- ── Classroom Body ── -->
+            <div class="classroom-body">
+                <!-- Video Area -->
+                <div class="video-area">
+                    <!-- View Controls -->
+                    <div class="view-controls">
+                        <button class="view-btn active" id="viewGalleryBtn" onclick="setView('gallery')">
+                            <i data-lucide="grid-2x2"></i> Gallery
+                        </button>
+                        <button class="view-btn" id="viewSpeakerBtn" onclick="setView('speaker')">
+                            <i data-lucide="user"></i> Speaker
+                        </button>
+                        <button class="view-btn" id="viewPresBtn" onclick="setView('presentation')">
+                            <i data-lucide="monitor"></i> Presentation
+                        </button>
+                        <button class="panel-toggle-btn" onclick="toggleSidePanel()">
+                            <i data-lucide="panel-right" id="panelToggleIcon"></i>
+                            <span id="panelToggleLabel">Hide Panel</span>
+                        </button>
+                    </div>
+
+                    <!-- Video Grid -->
+                    <div id="videoGrid" class="view-gallery">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Side Panel -->
+                <div id="sidePanel">
+                    <!-- Tabs -->
+                    <div class="panel-tabs">
+                        <div class="panel-tab active" id="tabChat" onclick="switchTab('chat')">Chat</div>
+                        <div class="panel-tab" id="tabPeople" onclick="switchTab('people')">
+                            People (<span id="panelParticipantCount">0</span>)
+                        </div>
+                        <div class="panel-tab" id="tabNotes" onclick="switchTab('notes')">AI Notes</div>
+                    </div>
+
+                    <!-- Chat Tab -->
+                    <div class="panel-tab-content active" id="tabContentChat">
+                        <div id="chatMessages">
+                            <!-- Chat messages rendered here -->
+                        </div>
+                        <div class="chat-input-area">
+                            <input class="form-input" id="chatInput" placeholder="Send a message…"
+                                style="padding:8px 12px;font-size:13px;border-radius:8px;">
+                            <button class="chat-send-btn" onclick="sendChat()">
+                                <i data-lucide="send"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- People Tab -->
+                    <div class="panel-tab-content" id="tabContentPeople">
+                        <div id="participantsList">
+                            <!-- Participants rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- AI Notes Tab -->
+                    <div class="panel-tab-content" id="tabContentNotes">
+                        <div id="aiInsightsContainer" style="padding:16px; flex:1; overflow-y:auto; min-height:0;">
+                            <div class="ai-notes-content" id="aiNotesPlaceholder" style="padding:40px 20px;">
+                                <div class="ai-notes-icon"><i data-lucide="bot" style="width:32px;height:32px;"></i>
+                                </div>
+                                <div class="ai-notes-title"
+                                    style="font-size:16px; font-weight:700; color:#f9fafb; margin:12px 0 8px;">AI
+                                    Classroom Assistant</div>
+                                <div class="ai-notes-sub"
+                                    style="font-size:13px; color:rgba(255,255,255,0.4); line-height:1.5;">I'm monitoring
+                                    the session to help you with summaries and focus insights.</div>
+                            </div>
+                        </div>
+                        <div
+                            style="padding:12px; border-top:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.1);">
+                            <button class="btn btn-primary btn-sm"
+                                style="width:100%; padding:10px; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:8px;"
+                                onclick="fetchAiInsights()">
+                                <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Generate AI Summary
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Controls Bar ── -->
+            <div class="controls-bar">
+
+                <!-- Reactions Popup -->
+                <div id="reactionsPopup">
+                    <button class="reaction-btn" onclick="sendReaction('👍')">👍</button>
+                    <button class="reaction-btn" onclick="sendReaction('❤️')">❤️</button>
+                    <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
+                    <button class="reaction-btn" onclick="sendReaction('😮')">😮</button>
+                    <button class="reaction-btn" onclick="sendReaction('👏')">👏</button>
+                    <button class="reaction-btn" onclick="sendReaction('🎉')">🎉</button>
+                </div>
+
+                <button class="ctrl-btn" id="micBtn" onclick="toggleMic()">
+                    <i data-lucide="mic" id="micIcon"></i>
+                    <span id="micLabel">Mute</span>
+                </button>
+                <button class="ctrl-btn" id="videoBtn" onclick="toggleVideo()">
+                    <i data-lucide="video" id="videoIcon"></i>
+                    <span id="videoLabel">Camera</span>
+                </button>
+
+                <div class="ctrl-divider"></div>
+
+                <button class="ctrl-btn" id="shareBtn" onclick="toggleScreenShare()">
+                    <i data-lucide="monitor-up"></i>
+                    <span>Share</span>
+                </button>
+                <button class="ctrl-btn" id="handBtn" onclick="toggleHand()">
+                    <i data-lucide="hand"></i>
+                    <span>Raise Hand</span>
+                </button>
+                <div style="position:relative;">
+                    <button class="ctrl-btn" id="reactBtn" onclick="toggleReactions()">
+                        <i data-lucide="smile"></i>
+                        <span>React</span>
+                    </button>
+                </div>
+                <button class="ctrl-btn" onclick="showInfo('Whiteboard is coming soon!')">
+                    <i data-lucide="pen-tool"></i>
+                    <span>Whiteboard</span>
+                </button>
+
+                <div class="ctrl-divider"></div>
+
+                <button class="ctrl-btn" onclick="showInfo('More options coming soon!')">
+                    <i data-lucide="more-horizontal"></i>
+                    <span>More</span>
+                </button>
+                <button class="ctrl-btn end-btn" onclick="leaveSession()">
+                    <i data-lucide="phone-off"></i>
+                    <span>End</span>
+                </button>
+            </div>
+
+            <script src="/js/api.js"></script>
+            <script>
+                requireAuth();
+
+                const user = getCurrentUser();
+                const params = new URLSearchParams(window.location.search);
+                const sessionId = params.get('sessionId');
+
+                // Validate sessionId
+                if (!sessionId || sessionId === 'null' || sessionId === 'undefined') {
+                    console.warn('No valid sessionId provided. Redirecting to dashboard...');
+                    window.location.href = user.role === 'TEACHER' ? '/teacher-dashboard.html' : '/student-dashboard.html';
+                }
+
+                // Sidebar Init
+                document.getElementById('sidebarAvatar').textContent = getInitials(user.fullName);
+                document.getElementById('sidebarName').textContent = user.fullName;
+                document.getElementById('sidebarRoleDisplay').textContent = user.role.charAt(0) + user.role.slice(1).toLowerCase();
+
+                const nav = document.getElementById('sidebarNav');
+                if (user.role === 'STUDENT') {
+                    nav.innerHTML = `
+                <span class="nav-section-label">Learning</span>
+                <a href="/student-dashboard.html" class="nav-item"><i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span></a>
+                <a href="/courses.html" class="nav-item"><i data-lucide="book-open"></i><span class="nav-label">Courses</span></a>
+                <a href="/ai-tutor.html" class="nav-item"><i data-lucide="bot"></i><span class="nav-label">AI Tutor</span></a>
+                <a href="/classroom.html" class="nav-item active"><i data-lucide="video"></i><span class="nav-label">Classroom</span></a>
+            `;
+                    document.getElementById('topbarActions').innerHTML = `
+                <button class="btn btn-secondary btn-sm" onclick="leaveSession()">Leave Session</button>
+            `;
+                    document.getElementById('noSessionBackBtn').href = '/student-dashboard.html';
+                } else {
+                    nav.innerHTML = `
+                <span class="nav-section-label">Teaching</span>
+                <a href="/teacher-dashboard.html" class="nav-item"><i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span></a>
+                <a href="/classroom.html" class="nav-item active"><i data-lucide="video"></i><span class="nav-label">Live Session</span></a>
+                <span class="nav-section-label" style="margin-top:var(--space-3);">Admin</span>
+                <a href="#" class="nav-item"><i data-lucide="users"></i><span class="nav-label">Students</span></a>
+                <a href="#" class="nav-item"><i data-lucide="bar-chart-2"></i><span class="nav-label">Analytics</span></a>
+            `;
+                    document.getElementById('topbarActions').innerHTML = `
+                <button class="btn btn-secondary btn-sm" style="background:rgba(239, 68, 68, 0.1); color:#f87171; border-color:rgba(239, 68, 68, 0.2);" onclick="endSessionAndLeave()">End Session</button>
+            `;
+                    document.getElementById('noSessionBackBtn').href = '/teacher-dashboard.html';
+                }
+
+                function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+                function openSidebar() { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('sidebarOverlay').classList.add('active'); }
+                function closeSidebar() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('sidebarOverlay').classList.remove('active'); }
+
+                let isMuted = false;
+                let isVideoOff = false;
+                let isHandRaised = false;
+                let sessionActive = false;
+                let sessionStartTime = null;
+                let timerInterval = null;
+                let sessionData = null;
+                let currentView = 'gallery';
+                let isPanelCollapsed = false;
+
+                let isSocketReady = false;
+                let isMediaReady = false;
+
+                let participants = [];
+                let localStream = null;
+                let stompClient = null;
+
+                // WebRTC state
+                let peerConnections = {}; // userId -> RTCPeerConnection
+                let remoteStreams = {}; // userId -> MediaStream
+                const iceConfig = {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ]
+                };
+
+                // Participant avatar gradient palette
+                const AVATAR_GRADIENTS = [
+                    'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    'linear-gradient(135deg,#10b981,#059669)',
+                    'linear-gradient(135deg,#f59e0b,#d97706)',
+                    'linear-gradient(135deg,#ec4899,#db2777)',
+                    'linear-gradient(135deg,#3b82f6,#2563eb)',
+                    'linear-gradient(135deg,#14b8a6,#0d9488)'
+                ];
+
+                function getInitials(name) {
+                    if (!name) return '?';
+                    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                }
+
+                function escHtml(str) {
+                    const d = document.createElement('div');
+                    d.textContent = str || '';
+                    return d.innerHTML;
+                }
+
+                // ── WebSocket Connection ──
+                function connectWebSocket() {
+                    if (!sessionId) return;
+                    const socket = new SockJS('/ws-classroom');
+                    stompClient = Stomp.over(socket);
+                    stompClient.debug = null; // Disable debug logging
+
+                    stompClient.connect({}, frame => {
+                        console.log('Connected to WebSocket');
+                        isSocketReady = true;
+                        fetchParticipants(); // Check for WebRTC initiation
+
+                        // Subscribe to chat
+                        stompClient.subscribe(`/topic/classroom/${sessionId}/chat`, message => {
+                            const chatMsg = JSON.parse(message.body);
+                            appendChatMessage(chatMsg);
+                        });
+
+                        // Subscribe to participant state
+                        stompClient.subscribe(`/topic/classroom/${sessionId}/state`, message => {
+                            const state = JSON.parse(message.body);
+                            updateParticipantState(state);
+                        });
+
+                        // Subscribe to signals (WebRTC)
+                        stompClient.subscribe(`/topic/classroom/${sessionId}/signal`, message => {
+                            const signal = JSON.parse(message.body);
+                            if (signal.targetId === user.id || signal.targetId === 'ALL') {
+                                handleSignal(signal);
+                            }
+                        });
+
+                        // Subscribe to reactions
+                        stompClient.subscribe(`/topic/classroom/${sessionId}/reaction`, message => {
+                            const reaction = JSON.parse(message.body);
+                            if (reaction.userId !== user.id) {
+                                showFloatingReaction(reaction.emoji);
+                            }
+                        });
+
+                        // Notify others of arrival
+                        broadcastState();
+                    }, error => {
+                        console.error('WebSocket connection error:', error);
+                        setTimeout(connectWebSocket, 5000); // Reconnect after 5s
+                    });
+                }
+
+                // ── Media Initialization ──
+                async function initLocalMedia() {
+                    try {
+                        localStream = await navigator.mediaDevices.getUserMedia({
+                            video: true,
+                            audio: true
+                        });
+
+                        // Apply initial states
+                        localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
+                        localStream.getVideoTracks().forEach(track => track.enabled = !isVideoOff);
+
+                        isMediaReady = true;
+                        fetchParticipants(); // Check for WebRTC initiation
+
+                        // Add to existing PCs
+                        Object.values(peerConnections).forEach(pc => {
+                            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+                        });
+
+                        renderAll();
+                    } catch (e) {
+                        console.error('Error accessing media devices:', e);
+                        showWarning('Could not access camera or microphone. Please check permissions.');
+                        isVideoOff = true;
+                        document.getElementById('videoBtn').classList.add('danger-active');
+                        document.getElementById('videoIcon').setAttribute('data-lucide', 'video-off');
+                        renderAll();
+                    }
+                }
+
+                // ── UI Updates ──
+                function updateParticipantState(state) {
+                    const idx = participants.findIndex(p => p.id === state.userId);
+                    if (idx !== -1) {
+                        participants[idx].isMuted = state.isMuted;
+                        participants[idx].isVideoOn = state.isVideoOn;
+                        participants[idx].isHandRaised = state.isHandRaised;
+                        renderAll();
+                    } else {
+                        // New participant joined (or we missed them)
+                        fetchParticipants();
+                    }
+                }
+
+                function appendChatMessage(msg) {
+                    const container = document.getElementById('chatMessages');
+                    const isOwn = msg.senderId === user.id;
+                    const div = document.createElement('div');
+                    div.className = `chat-msg ${isOwn ? 'own-msg' : ''}`;
+                    div.innerHTML = `
+                        <div class="chat-msg-header">
+                            <span class="chat-msg-name" style="${isOwn ? 'color:#818cf8;' : ''}">${escHtml(msg.senderName)}</span>
+                            <span class="chat-msg-time">${msg.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div class="chat-msg-text">${escHtml(msg.content)}</div>
+                    `;
+                    container.appendChild(div);
+                    container.scrollTop = container.scrollHeight;
+                }
+
+                // ── View switching ──
+                async function fetchAiInsights() {
+                    const container = document.getElementById('aiInsightsContainer');
+                    container.innerHTML = `
+                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; color:rgba(255,255,255,0.4);">
+                            <div class="loading" style="width:24px;height:24px;margin-bottom:16px;"></div>
+                            <div style="font-size:13px;">Analyzing classroom activity...</div>
+                        </div>
+                    `;
+                    try {
+                        const data = await apiCall(`/monitoring/insights/${sessionId}`);
+                        container.innerHTML = `
+                            <div class="ai-insight-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px; margin-bottom:12px;">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; color:#818cf8; font-weight:700; font-size:14px;">
+                                    <i data-lucide="brain-circuit" style="width:18px;height:18px;"></i>
+                                    AI Session Analysis
+                                </div>
+                                <div style="font-size:13px; line-height:1.6; color:#d1d5db; background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; border:1px solid rgba(255,255,255,0.04); white-space:pre-wrap; margin-bottom:16px;">${data.aiSummary || 'No summary available yet. Please wait for more classroom activity.'}</div>
+                                
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                    <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:8px; text-align:center; border:1px solid rgba(255,255,255,0.04);">
+                                        <div style="font-size:10px; color:var(--color-text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Avg Focus</div>
+                                        <div style="font-size:20px; font-weight:800; color:#10b981;">${Math.round(data.averageFocus || 0)}%</div>
+                                    </div>
+                                    <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:8px; text-align:center; border:1px solid rgba(255,255,255,0.04);">
+                                        <div style="font-size:10px; color:var(--color-text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Attention</div>
+                                        <div style="font-size:16px; font-weight:800; color:${data.needsAttention ? '#f87171' : '#10b981'}; margin-top:4px;">${data.needsAttention ? 'NEEDS FOCUS' : 'EXCELLENT'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    } catch (e) {
+                        console.error('Insights error', e);
+                        container.innerHTML = `
+                            <div style="text-align:center; padding:40px 20px;">
+                                <i data-lucide="alert-circle" style="width:32px;height:32px;color:#f87171;margin-bottom:12px;"></i>
+                                <div style="color:#f87171; font-weight:600;">Failed to generate insights</div>
+                                <div style="font-size:12px; color:var(--color-text-muted); margin-top:4px;">Please try again in a moment.</div>
+                            </div>
+                         `;
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                }
+
+                function setView(view) {
+                    currentView = view;
+                    const grid = document.getElementById('videoGrid');
+                    grid.classList.remove('view-gallery', 'view-speaker', 'view-presentation');
+                    grid.classList.add('view-' + view);
+
+                    document.getElementById('viewGalleryBtn').classList.toggle('active', view === 'gallery');
+                    document.getElementById('viewSpeakerBtn').classList.toggle('active', view === 'speaker');
+                    document.getElementById('viewPresBtn').classList.toggle('active', view === 'presentation');
+
+                    renderVideoGrid();
+                }
+
+                // ── Panel toggle ──
+                function toggleSidePanel() {
+                    isPanelCollapsed = !isPanelCollapsed;
+                    document.getElementById('sidePanel').classList.toggle('collapsed', isPanelCollapsed);
+                    document.getElementById('panelToggleIcon').setAttribute('data-lucide', isPanelCollapsed ? 'panel-right-open' : 'panel-right');
+                    document.getElementById('panelToggleLabel').textContent = isPanelCollapsed ? 'Show Panel' : 'Hide Panel';
+                    lucide.createIcons();
+                }
+
+                // ── Tab switching ──
+                function switchTab(tab) {
+                    ['chat', 'people', 'notes'].forEach(t => {
+                        document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+                        document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+                    });
+                }
+
+                // ── Video Grid Render ──
+                function checkApprovalStatus() {
+                    const me = participants.find(p => p.id === user.id);
+                    const overlay = document.getElementById('waitingRoomOverlay');
+                    if (me && !me.isApproved) {
+                        overlay.style.display = 'flex';
+                    } else {
+                        overlay.style.display = 'none';
+                    }
+                }
+
+                async function admitParticipant(participantUserId) {
+                    try {
+                        await apiCall(`/sessions/participants/approve?sessionId=${sessionId}&participantUserId=${participantUserId}`, { method: 'POST' });
+                        fetchParticipants();
+                        // Also notify via socket if possible, but poll will pick it up
+                        if (stompClient && stompClient.connected) {
+                            stompClient.send(`/app/classroom/${sessionId}/signal`, {}, JSON.stringify({
+                                senderId: user.id,
+                                targetId: participantUserId,
+                                type: 'approved',
+                                signal: {}
+                            }));
+                        }
+                    } catch (e) {
+                        showError('Failed to admit participant');
+                    }
+                }
+
+                function renderVideoGrid() {
+                    const grid = document.getElementById('videoGrid');
+                    const approved = participants.filter(p => p.isApproved);
+
+                    if (!approved.length) {
+                        grid.innerHTML = '<div style="grid-column:1/-1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--color-text-muted); gap:12px;"><i data-lucide="users" style="width:48px;height:48px;opacity:.2;"></i><p>Waiting for participants to be admitted...</p></div>';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                        return;
+                    }
+
+                    grid.innerHTML = '';
+                    if (currentView === 'gallery') {
+                        approved.forEach((p, i) => grid.appendChild(createTileElement(p, i)));
+                    } else if (currentView === 'speaker') {
+                        const host = approved.find(p => p.isHost) || approved[0];
+                        const rest = approved.filter(p => p.id !== host.id);
+
+                        grid.appendChild(createTileElement(host, 0, true, true));
+                        if (rest.length) {
+                            const strip = document.createElement('div');
+                            strip.className = 'speaker-strip';
+                            rest.forEach((p, i) => strip.appendChild(createTileElement(p, i + 1, false)));
+                            grid.appendChild(strip);
+                        }
+                    } else {
+                        // Presentation view
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'presentation-placeholder';
+                        placeholder.innerHTML = `<i data-lucide="monitor"></i><p>Screen sharing</p><p style="font-size:11px;opacity:.6;">Presentation mode active</p>`;
+                        grid.appendChild(placeholder);
+
+                        const strip = document.createElement('div');
+                        strip.className = 'participant-strip';
+                        approved.forEach((p, i) => strip.appendChild(createTileElement(p, i, false)));
+                        grid.appendChild(strip);
+                    }
+
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+
+                function createTileElement(p, idx, large = true, isSpeaking = false) {
+                    const div = document.createElement('div');
+                    const isSpeakingTile = isSpeaking || (p.id === user.id && !isMuted);
+                    div.className = `video-tile ${isSpeakingTile ? 'speaking' : ''}`;
+
+                    const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length];
+
+                    div.innerHTML = `
+                        ${p.isHost ? '<div class="host-badge">Host</div>' : ''}
+                        ${p.isHandRaised ? '<div style="position:absolute; top:8px; right:8px; background:#f59e0b; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); z-index:2;"><i data-lucide="hand" style="width:14px;height:14px;"></i></div>' : ''}
+                        <div class="video-tile-bg" id="video-container-${p.id}">
+                            ${!p.isVideoOn
+                            ? `<div class="video-off-overlay"><i data-lucide="video-off"></i></div>`
+                            : `<div class="participant-avatar-tile" style="background:${gradient}; position:absolute; z-index:1;">${getInitials(p.name)}</div>`
+                        }
+                        </div>
+                        <div class="tile-overlay">
+                            <span class="tile-name">${escHtml(p.name)}${p.id === user.id ? ' (You)' : ''}</span>
+                            <div class="tile-icons">
+                                <div class="tile-icon ${p.isMuted ? 'muted-icon' : ''}"><i data-lucide="${p.isMuted ? 'mic-off' : 'mic'}"></i></div>
+                                <div class="tile-icon ${!p.isVideoOn ? 'muted-icon' : ''}"><i data-lucide="${p.isVideoOn ? 'video' : 'video-off'}"></i></div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Handle Local Stream
+                    if (p.id === user.id && localStream && p.isVideoOn) {
+                        const video = document.createElement('video');
+                        video.srcObject = localStream;
+                        video.autoplay = true;
+                        video.muted = true;
+                        video.className = 'local-video-preview';
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        video.style.position = 'relative';
+                        video.style.zIndex = '2';
+                        div.querySelector('.video-tile-bg').appendChild(video);
+                    }
+                    // Handle Remote Stream
+                    else if (p.id !== user.id && remoteStreams[p.id] && p.isVideoOn) {
+                        const video = document.createElement('video');
+                        video.srcObject = remoteStreams[p.id];
+                        video.autoplay = true;
+                        video.className = 'remote-video';
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        video.style.position = 'relative';
+                        video.style.zIndex = '2';
+                        div.querySelector('.video-tile-bg').appendChild(video);
+                    }
+
+                    return div;
+                }
+
+                // ── Participants List ──
+                function renderParticipantsList() {
+                    const list = document.getElementById('participantsList');
+                    const approved = participants.filter(p => p.isApproved);
+                    const pending = participants.filter(p => !p.isApproved);
+                    const isHost = user.role === 'TEACHER' || user.role === 'ADMIN';
+
+                    let html = '';
+
+                    if (pending.length > 0 && isHost) {
+                        html += `<div style="padding:16px 16px 8px; font-size:11px; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.05em;">Waiting Room (${pending.length})</div>`;
+                        pending.forEach((p, i) => {
+                            const gradient = AVATAR_GRADIENTS[(i + approved.length) % AVATAR_GRADIENTS.length];
+                            html += `
+                                <div class="participant-row" style="background:rgba(99,102,241,0.05); border:1px dashed rgba(99,102,241,0.2); margin:4px 12px; border-radius:8px;">
+                                    <div class="p-avatar" style="background:${gradient}">${getInitials(p.name)}</div>
+                                    <div class="p-info">
+                                        <div class="p-name">${escHtml(p.name)}</div>
+                                        <div class="p-role">Asking to join...</div>
+                                    </div>
+                                    <div class="p-icons">
+                                        <button class="btn btn-primary btn-sm" onclick="admitParticipant('${p.id}')" style="padding:4px 12px; font-size:11px; border-radius:6px;">Admit</button>
+                                    </div>
+                                </div>
+                             `;
+                        });
+                    }
+
+                    html += `<div style="padding:16px 16px 8px; font-size:11px; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.05em;">Participants (${approved.length})</div>`;
+
+                    approved.forEach((p, i) => {
+                        const gradient = AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length];
+                        html += `
+                        <div class="participant-row">
+                            <div class="p-avatar" style="background:${gradient};">${getInitials(p.name)}</div>
+                            <div class="p-info">
+                                <div class="p-name">${escHtml(p.name)}${p.id === user.id ? ' (You)' : ''}</div>
+                                <div class="p-role">${p.role}${p.isHost ? ' · Host' : ''}</div>
+                            </div>
+                            <div class="p-icons">
+                                ${p.isHandRaised ? '<div class="p-icon" style="background:rgba(245,158,11,0.2);"><i data-lucide="hand" style="color:#f59e0b;"></i></div>' : ''}
+                                <div class="p-icon ${p.isMuted ? 'muted' : ''}"><i data-lucide="${p.isMuted ? 'mic-off' : 'mic'}"></i></div>
+                                <div class="p-icon ${!p.isVideoOn ? 'muted' : ''}"><i data-lucide="${p.isVideoOn ? 'video' : 'video-off'}"></i></div>
+                            </div>
+                        </div>
+                        `;
+                    });
+
+                    list.innerHTML = html;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+
+                function renderAll() {
+                    renderVideoGrid();
+                    renderParticipantsList();
+                    document.getElementById('participantCount').innerHTML = `<i data-lucide="users" style="width:13px;height:13px;opacity:.5;"></i> ${participants.length} participants`;
+                    document.getElementById('panelParticipantCount').textContent = participants.length;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+
+                // ── Sync & Broadcast ──
+                async function syncStatus(reaction = null) {
+                    try {
+                        const payload = {
+                            sessionId,
+                            userId: user.id,
+                            isMuted,
+                            isVideoOn: !isVideoOff,
+                            isHandRaised
+                        };
+                        if (reaction) payload.lastReaction = reaction;
+                        await apiCall('/sessions/participants/heartbeat', { method: 'POST', body: JSON.stringify(payload) });
+
+                        // Also notify via WebSocket
+                        broadcastState();
+                    } catch (e) {
+                        console.error('Sync failed', e);
+                        if (e.status === 403 || (e.message && e.message.includes('403'))) {
+                            showError('Access Denied: You are not enrolled or the session is not active.');
+                            setTimeout(() => window.location.href = '/student-dashboard.html', 3000);
+                        }
+                    }
+                }
+
+                function broadcastState() {
+                    if (stompClient && stompClient.connected) {
+                        stompClient.send(`/app/classroom/${sessionId}/state`, {}, JSON.stringify({
+                            userId: user.id,
+                            userName: user.fullName,
+                            isMuted,
+                            isVideoOn: !isVideoOff,
+                            isHandRaised
+                        }));
+                    }
+                }
+
+                async function fetchParticipants() {
+                    if (!sessionId) return;
+                    try {
+                        const data = await apiCall(`/sessions/participants/${sessionId}`);
+                        participants = data.map(p => ({
+                            id: p.user.id,
+                            name: p.user.fullName,
+                            role: p.user.role,
+                            isMuted: p.isMuted,
+                            isVideoOn: p.isVideoOn,
+                            isHandRaised: p.isHandRaised,
+                            isApproved: p.isApproved,
+                            isHost: p.user.role === 'TEACHER' || p.user.role === 'ADMIN',
+                            lastSeen: p.lastSeen
+                        })).sort((a, b) => a.id.localeCompare(b.id)); // Stability: Sort by ID
+
+                        checkApprovalStatus();
+                        renderAll();
+
+                        // Initiate WebRTC connections for new peers ONLY if ready AND approved
+                        if (isSocketReady && isMediaReady) {
+                            participants.forEach(p => {
+                                if (p.id !== user.id && !peerConnections[p.id] && p.isApproved) {
+                                    if (user.id < p.id) {
+                                        console.log(`Ready to initiate connection to approved user ${p.name} (${p.id})`);
+                                        initPeerConnection(p.id, true);
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Fetch participants failed', e);
+                    }
+                }
+
+                // ── WebRTC Implementation ──
+                async function initPeerConnection(userId, isInitiator) {
+                    if (peerConnections[userId]) return;
+
+                    const pc = new RTCPeerConnection(iceConfig);
+                    peerConnections[userId] = pc;
+
+                    // Add local tracks
+                    if (localStream) {
+                        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+                    }
+
+                    pc.onicecandidate = event => {
+                        if (event.candidate) {
+                            console.log(`Sending ICE candidate to ${userId}`);
+                            sendSignal(userId, 'candidate', event.candidate);
+                        }
+                    };
+
+                    pc.onnegotiationneeded = async () => {
+                        try {
+                            console.log(`Negotiation needed for ${userId}`);
+                            const offer = await pc.createOffer();
+                            await pc.setLocalDescription(offer);
+                            sendSignal(userId, 'offer', offer);
+                        } catch (err) {
+                            console.error('Negotiation error', err);
+                        }
+                    };
+
+                    pc.ontrack = event => {
+                        console.log(`Received remote track from ${userId}:`, event.track.kind);
+                        if (!remoteStreams[userId]) {
+                            remoteStreams[userId] = new MediaStream();
+                        }
+                        remoteStreams[userId].addTrack(event.track);
+
+                        // Once we have a track, re-render to show the video element
+                        renderAll();
+                    };
+
+                    pc.onconnectionstatechange = () => {
+                        console.log(`Connection state with ${userId}:`, pc.connectionState);
+                        if (pc.connectionState === 'connected') {
+                            console.log(`P2P Connected with ${userId}`);
+                        }
+                        if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+                            console.warn(`P2P Lost with ${userId}, cleaning up...`);
+                            cleanupPeerConnection(userId);
+                        }
+                    };
+
+                    if (isInitiator) {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        sendSignal(userId, 'offer', offer);
+                    }
+                }
+
+                async function handleSignal(data) {
+                    const { senderId, type, signal } = data;
+                    console.log(`Received ${type} signal from ${senderId}`);
+
+                    if (type === 'session_ended') {
+                        showWarning('The host has ended the session. Redirecting to dashboard...');
+                        setTimeout(() => {
+                            window.location.href = user.role === 'TEACHER' ? '/teacher-dashboard.html' : '/student-dashboard.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    if (type === 'approved') {
+                        fetchParticipants();
+                    } else if (type === 'offer') {
+                        await initPeerConnection(senderId, false);
+                        const pc = peerConnections[senderId];
+                        await pc.setRemoteDescription(new RTCSessionDescription(signal));
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        sendSignal(senderId, 'answer', answer);
+                    } else if (type === 'answer') {
+                        const pc = peerConnections[senderId];
+                        if (pc) {
+                            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+                        }
+                    } else if (type === 'candidate') {
+                        const pc = peerConnections[senderId];
+                        if (pc) {
+                            try {
+                                await pc.addIceCandidate(new RTCIceCandidate(signal));
+                            } catch (e) {
+                                console.warn('Error adding ICE candidate', e);
+                            }
+                        }
+                    }
+                }
+
+                function sendSignal(targetId, type, signal) {
+                    if (stompClient && stompClient.connected) {
+                        console.log(`Sending ${type} to ${targetId}`);
+                        stompClient.send(`/app/classroom/${sessionId}/signal`, {}, JSON.stringify({
+                            senderId: user.id,
+                            targetId: targetId,
+                            type: type,
+                            signal: signal
+                        }));
+                    } else {
+                        console.warn(`Cannot send ${type} to ${targetId}: WebSocket not connected`);
+                    }
+                }
+
+                function cleanupPeerConnection(userId) {
+                    if (peerConnections[userId]) {
+                        peerConnections[userId].close();
+                        delete peerConnections[userId];
+                    }
+                    if (remoteStreams[userId]) {
+                        delete remoteStreams[userId];
+                    }
+                    renderAll();
+                }
+
+                function showFloatingReaction(emoji) {
+                    const el = document.createElement('div');
+                    el.className = 'floating-emoji';
+                    el.textContent = emoji;
+                    el.style.left = (30 + Math.random() * 40) + '%';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 2500);
+                }
+
+                // ── Controls ──
+                function toggleMic() {
+                    isMuted = !isMuted;
+                    if (localStream) {
+                        localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
+                    }
+                    const icon = document.getElementById('micIcon');
+                    icon.setAttribute('data-lucide', isMuted ? 'mic-off' : 'mic');
+                    document.getElementById('micLabel').textContent = isMuted ? 'Unmute' : 'Mute';
+                    document.getElementById('micBtn').classList.toggle('danger-active', isMuted);
+                    syncStatus();
+                }
+
+                function toggleVideo() {
+                    isVideoOff = !isVideoOff;
+                    if (localStream) {
+                        localStream.getVideoTracks().forEach(track => track.enabled = !isVideoOff);
+                    }
+                    const icon = document.getElementById('videoIcon');
+                    icon.setAttribute('data-lucide', isVideoOff ? 'video-off' : 'video');
+                    document.getElementById('videoLabel').textContent = isVideoOff ? 'Start Video' : 'Camera';
+                    document.getElementById('videoBtn').classList.toggle('danger-active', isVideoOff);
+                    syncStatus();
+                }
+
+                function toggleHand() {
+                    isHandRaised = !isHandRaised;
+                    document.getElementById('handBtn').classList.toggle('active', isHandRaised);
+                    syncStatus();
+                    if (isHandRaised) showInfo('Your hand is raised!');
+                }
+
+                function sendReaction(emoji) {
+                    document.getElementById('reactionsPopup').classList.remove('open');
+                    showFloatingReaction(emoji);
+                    if (stompClient && stompClient.connected) {
+                        stompClient.send(`/app/classroom/${sessionId}/reaction`, {}, JSON.stringify({
+                            userId: user.id,
+                            emoji: emoji
+                        }));
+                    }
+                }
+
+                async function sendChat() {
+                    const input = document.getElementById('chatInput');
+                    const content = input.value.trim();
+                    if (!content || !sessionId) return;
+
+                    const msg = {
+                        senderId: user.id,
+                        senderName: user.fullName,
+                        content: content,
+                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    };
+
+                    if (stompClient && stompClient.connected) {
+                        stompClient.send(`/app/classroom/${sessionId}/chat`, {}, JSON.stringify(msg));
+                        // Also save to DB for persistence
+                        apiCall('/chat/send', { method: 'POST', body: JSON.stringify({ sessionId, userId: user.id, content }) });
+                        input.value = '';
+                    } else {
+                        showWarning('Connecting to live chat...');
+                    }
+                }
+
+                // ── Session Flow ──
+                async function loadSession() {
+                    if (!sessionId) return;
+                    try {
+                        sessionData = await apiCall(`/sessions/${sessionId}`);
+                        document.getElementById('sessionNameDisplay').textContent = sessionData.sessionName || 'Live Session';
+                        if (sessionData.isActive) {
+                            activateSession();
+                            document.getElementById('notStartedOverlay').style.display = 'none';
+                        } else {
+                            if (user.role === 'TEACHER' || user.role === 'ADMIN') {
+                                showStartOverlay();
+                            } else {
+                                document.getElementById('notStartedOverlay').style.display = 'flex';
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Session load failed', e);
+                        showError('Could not load session details.');
+                    }
+
+                    await fetchParticipants();
+                    connectWebSocket();
+                    await initLocalMedia();
+                    syncStatus(); // Sync immediately
+
+                    // Polling fallbacks
+                    setInterval(fetchParticipants, 10000);
+                    setInterval(syncStatus, 15000);
+                }
+
+                function activateSession() {
+                    sessionActive = true;
+                    sessionStartTime = sessionData.startTime ? new Date(sessionData.startTime).getTime() : Date.now();
+                    document.getElementById('liveBadge').style.display = 'flex';
+                    startTimer();
+                }
+
+                function startTimer() {
+                    if (timerInterval) clearInterval(timerInterval);
+                    if (!sessionStartTime) return;
+
+                    timerInterval = setInterval(() => {
+                        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                        if (elapsed < 0) return;
+                        const m = Math.floor(elapsed / 60);
+                        const s = elapsed % 60;
+                        document.getElementById('timer').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    }, 1000);
+                }
+
+                async function leaveSession() {
+                    if (confirm('Leave the session?')) {
+                        if (localStream) localStream.getTracks().forEach(t => t.stop());
+                        Object.values(peerConnections).forEach(pc => pc.close());
+                        peerConnections = {};
+                        remoteStreams = {};
+                        await apiCall(`/sessions/participants/leave?sessionId=${sessionId}&userId=${user.id}`, { method: 'POST' });
+                        window.location.href = user.role === 'TEACHER' ? '/teacher-dashboard.html' : '/student-dashboard.html';
+                    }
+                }
+
+                async function endSessionAndLeave() {
+                    if (confirm('End session for everyone?')) {
+                        // Notify everyone first
+                        if (stompClient && stompClient.connected) {
+                            stompClient.send(`/app/classroom/${sessionId}/signal`, {}, JSON.stringify({
+                                senderId: user.id,
+                                targetId: 'ALL', // Special broadcast target
+                                type: 'session_ended',
+                                signal: {}
+                            }));
+                        }
+                        await endSession(sessionId);
+                        window.location.href = '/teacher-dashboard.html';
+                    }
+                }
+
+                function showStartOverlay() {
+                    document.getElementById('startOverlay').style.display = 'flex';
+                }
+
+                async function startSessionLocal() {
+                    try {
+                        const btn = document.getElementById('startSessionBtn');
+                        btn.disabled = true;
+                        btn.innerHTML = '<span class="loading"></span> Starting...';
+
+                        await startSession(sessionId);
+                        document.getElementById('startOverlay').style.display = 'none';
+
+                        // Reload session data to get active status
+                        sessionData = await apiCall(`/sessions/${sessionId}`);
+                        activateSession();
+
+                        // Notify others
+                        broadcastState();
+                    } catch (err) {
+                        console.error('Failed to start session', err);
+                        showError('Failed to start session. Please try again.');
+                        const btn = document.getElementById('startSessionBtn');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i data-lucide="play" style="width:14px;height:14px;"></i> Start Session';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                }
+
+                loadSession();
+            </script>
+
+            <!-- Start Session Overlay -->
+            <div class="start-overlay" id="startOverlay"
+                style="display:none;position:fixed;inset:0;z-index:50;background:rgba(10,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+                <div class="start-overlay-icon"
+                    style="width:80px;height:80px;background:rgba(99,102,241,0.1);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;color:#818cf8;">
+                    <i data-lucide="video" style="width:40px;height:40px;"></i>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:24px;font-weight:800;margin-bottom:12px;color:#f9fafb;">Ready to go live?
+                    </div>
+                    <div
+                        style="font-size:15px;color:rgba(255,255,255,.5);margin-bottom:32px;max-width:320px;line-height:1.6;">
+                        Your students are enrolled and waiting for you to start the live session.</div>
+                    <button class="btn btn-primary" id="startSessionBtn" onclick="startSessionLocal()"
+                        style="font-size:15px;padding:14px 36px;border-radius:12px;box-shadow:0 8px 24px rgba(99,102,241,0.3);">
+                        <i data-lucide="play" style="width:16px;height:16px;"></i> Start Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- Waiting Room Overlay -->
+            <div id="waitingRoomOverlay" class="waiting-room-overlay"
+                style="display:none; position:fixed; inset:0; background:rgba(10,11,20,0.98); z-index:1000; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; backdrop-filter:blur(10px);">
+                <div class="waiting-room-content">
+                    <div class="waiting-room-icon"
+                        style="width:80px; height:80px; background:rgba(99,102,241,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; color:#818cf8; border:2px solid rgba(99,102,241,0.2);">
+                        <i data-lucide="clock" style="width:40px; height:40px;"></i>
+                    </div>
+                    <h2 style="font-size:24px; font-weight:800; color:#f9fafb; margin-bottom:12px;">Waiting to be
+                        admitted...</h2>
+                    <p style="font-size:15px; color:rgba(255,255,255,0.5); line-height:1.6; max-width:320px;">The host
+                        has been notified that you'd like to join. Hang tight!</p>
+                    <button class="btn btn-secondary" onclick="leaveSession()" style="margin-top:32px;">Leave
+                        Meeting</button>
+                </div>
+            </div>
+
+            <!-- Session Not Started Overlay (Students) -->
+            <div id="notStartedOverlay"
+                style="display:none;position:fixed;inset:0;z-index:900;background:rgba(10,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+                <div
+                    style="width:80px;height:80px;background:rgba(245,158,11,0.1);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;color:#f59e0b;">
+                    <i data-lucide="clock" style="width:40px;height:40px;"></i>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:24px;font-weight:800;margin-bottom:12px;color:#f9fafb;">Session hasn't started
+                        yet
+                    </div>
+                    <p
+                        style="font-size:15px;color:rgba(255,255,255,.5);margin-bottom:32px;max-width:320px;line-height:1.6;">
+                        The
+                        host hasn't activated this session. Please wait for the teacher to begin.</p>
+                    <button class="btn btn-secondary" onclick="window.location.href='/student-dashboard.html'">Go
+                        Back</button>
+                </div>
+            </div>
+
+            <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+        </div> <!-- main -->
+    </div> <!-- app-layout -->
+</body>
+
+</html>

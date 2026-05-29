@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Courses - EduAI Classroom</title>
+    <meta name="description"
+        content="Browse and enroll in courses on EduAI. Discover what you're enrolled in and explore new learning opportunities.">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ── Filter Tabs ── */
+        .filter-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: var(--space-5);
+        }
+
+        .filter-tab {
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            font-size: var(--font-sm);
+            font-weight: 600;
+            cursor: pointer;
+            background: none;
+            border: 1px solid transparent;
+            color: var(--color-text-muted);
+            transition: var(--transition-fast);
+            font-family: inherit;
+        }
+
+        .filter-tab.active,
+        .filter-tab:hover {
+            background: rgba(99, 102, 241, .12);
+            border-color: rgba(99, 102, 241, .3);
+            color: var(--color-brand-400);
+        }
+
+        /* ── Search ── */
+        .search-bar {
+            position: relative;
+            margin-bottom: var(--space-5);
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: var(--space-3) var(--space-4) var(--space-3) 44px;
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            color: var(--color-text-primary);
+            font-size: var(--font-sm);
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition-fast);
+        }
+
+        .search-bar input:focus {
+            border-color: rgba(99, 102, 241, .4);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, .08);
+        }
+
+        .search-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .search-bar-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-text-muted);
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+        }
+
+        /* ── Section Header ── */
+        .section-title {
+            font-size: var(--font-lg);
+            font-weight: 800;
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .section-badge {
+            font-size: var(--font-xs);
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: var(--radius-full);
+            background: rgba(99, 102, 241, .15);
+            color: var(--color-brand-400);
+        }
+
+        /* ── Courses Grid (3-column) ── */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-5);
+            margin-bottom: var(--space-8);
+        }
+
+        @media (max-width: 1100px) {
+            .courses-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Course Card ── */
+        .course-card {
+            background: var(--color-bg-surface);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            transition: var(--transition-slow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .course-card:hover {
+            border-color: rgba(99, 102, 241, .3);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Colored header strip */
+        .course-card-header {
+            padding: var(--space-5);
+            min-height: 96px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .course-icon-wrap {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            flex-shrink: 0;
+        }
+
+        .course-icon-wrap svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .course-ai-badge {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 100px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .course-ai-badge svg {
+            width: 10px;
+            height: 10px;
+        }
+
+        .course-card-name-overlay {
+            position: absolute;
+            bottom: var(--space-4);
+            left: var(--space-5);
+            right: var(--space-5);
+            font-size: var(--font-base);
+            font-weight: 800;
+            color: white;
+            line-height: 1.25;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Card body */
+        .course-card-body {
+            padding: var(--space-4) var(--space-5);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .course-card-desc {
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+            line-height: 1.6;
+            flex: 1;
+        }
+
+        /* Student count */
+        .course-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+        }
+
+        .course-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--color-text-muted);
+        }
+
+        .course-meta-item svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* Progress bar (for enrolled) */
+        .course-progress {
+            margin-top: var(--space-1);
+        }
+
+        .course-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--color-text-muted);
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-full);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            border-radius: var(--radius-full);
+            transition: width 0.6s ease;
+        }
+
+        /* Actions */
+        .course-card-actions {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: auto;
+        }
+
+        .btn-enrolled {
+            flex: 1;
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            font-weight: 600;
+            background: rgba(16, 185, 129, .12);
+            color: var(--color-success);
+            border: 1px solid rgba(16, 185, 129, .25);
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .btn-enrolled svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        /* Empty state */
+        .empty-section {
+            text-align: center;
+            padding: var(--space-8);
+            color: var(--color-text-muted);
+            font-size: var(--font-sm);
+            background: var(--color-bg-surface);
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-8);
+        }
+
+        /* Sidebar collapse */
+        .sidebar-collapse-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+        }
+
+        .sidebar-collapse-btn:hover {
+            color: var(--color-text-primary);
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .sidebar-collapse-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .hamburger-btn {
+            display: none;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .6);
+            z-index: 199;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 200;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                width: 240px !important;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- ════════ SIDEBAR ════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">E</div>
+                <span class="sidebar-logo-text" style="font-size:var(--font-sm);font-weight:700;">EduAI</span>
+                <button class="sidebar-collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <span class="nav-section-label">Learning</span>
+                <a href="/student-dashboard.html" class="nav-item"><i data-lucide="layout-dashboard"></i><span
+                        class="nav-label">Dashboard</span></a>
+                <a href="/courses.html" class="nav-item active"><i data-lucide="book-open"></i><span
+                        class="nav-label">Courses</span></a>
+                <a href="/ai-tutor.html" class="nav-item"><i data-lucide="bot"></i><span class="nav-label">AI
+                        Tutor</span></a>
+                <a href="/classroom.html" class="nav-item"><i data-lucide="video"></i><span
+                        class="nav-label">Classroom</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar" id="sidebarAvatar"></div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarName"></div>
+                        <div class="user-role">Student</div>
+                    </div>
+                    <button onclick="logout()"
+                        style="background:none;border:none;color:var(--color-text-muted);cursor:pointer;padding:4px;display:flex;align-items:center;"
+                        aria-label="Logout">
+                        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- ════════ MAIN ════════ -->
+        <div class="main">
+            <header class="topbar">
+                <div class="topbar-left" style="display:flex;align-items:center;gap:var(--space-3);">
+                    <button class="hamburger-btn" onclick="openSidebar()" aria-label="Open menu">
+                        <i data-lucide="menu" style="width:18px;height:18px;"></i>
+                    </button>
+                    <div>
+                        <div style="font-size:var(--font-lg);font-weight:700;">Browse Courses</div>
+                        <div style="font-size:var(--font-xs);color:var(--color-text-muted);margin-top:2px;">Discover and
+                            enroll in courses to start learning</div>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" aria-label="Notifications"><i data-lucide="bell"
+                            style="width:16px;height:16px;"></i></button>
+                </div>
+            </header>
+
+            <main class="content">
+
+                <!-- Search row -->
+                <div class="search-bar">
+                    <i data-lucide="search" class="search-bar-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search courses…" oninput="filterCourses()">
+                </div>
+
+                <!-- Enrolled Courses -->
+                <div id="enrolledSection">
+                    <div class="section-title">
+                        <i data-lucide="check-circle" style="width:18px;height:18px;color:var(--color-success);"></i>
+                        My Enrolled Courses
+                        <span class="section-badge" id="enrolledCount">0</span>
+                    </div>
+                    <div class="courses-grid" id="enrolledGrid">
+                        <div class="empty-section" style="grid-column:1/-1;">Loading your enrollments…</div>
+                    </div>
+                </div>
+
+                <!-- Available Courses -->
+                <div id="availableSection" style="margin-top: var(--space-8);">
+                    <div class="section-title">
+                        <i data-lucide="compass" style="width:18px;height:18px;color:var(--color-brand-400);"></i>
+                        Available Courses
+                        <span class="section-badge" id="availableCount">0</span>
+                    </div>
+                    <p style="color:var(--color-text-muted); font-size:var(--font-sm); margin-bottom:var(--space-4);">
+                        These are courses assigned to your current class that you can enroll in.
+                    </p>
+                    <div class="courses-grid" id="availableGrid">
+                        <div class="empty-section" style="grid-column:1/-1;">Loading available courses…</div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        requireAuth();
+        requireRole(['STUDENT']);
+
+        const user = getCurrentUser();
+        document.getElementById('sidebarAvatar').textContent = getInitials(user.fullName);
+        document.getElementById('sidebarName').textContent = user.fullName;
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function openSidebar() { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('sidebarOverlay').classList.add('active'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('sidebarOverlay').classList.remove('active'); }
+
+        // Course icon + gradient mappings
+        const COURSE_GRADIENTS = [
+            'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            'linear-gradient(135deg,#10b981,#3b82f6)',
+            'linear-gradient(135deg,#f59e0b,#ef4444)',
+            'linear-gradient(135deg,#8b5cf6,#ec4899)',
+            'linear-gradient(135deg,#3b82f6,#06b6d4)',
+            'linear-gradient(135deg,#14b8a6,#6366f1)',
+        ];
+
+        const COURSE_ICONS = ['brain', 'code-2', 'globe', 'database', 'cpu', 'git-branch', 'bar-chart-2', 'layers'];
+
+        let allCourses = [];
+        let enrolledIds = new Set();
+        let progressMap = new Map();
+
+        async function loadPage() {
+            try {
+                const [courses, enrollments, stats] = await Promise.all([
+                    getAllCourses(),
+                    apiCall(`/enrollments/student/${user.id}`),
+                    apiCall(`/dashboard/student/${user.id}/stats`)
+                ]);
+                allCourses = courses || [];
+                enrolledIds = new Set((enrollments || []).map(e => e.course?.id || e.courseId));
+
+                // Build progress map from stats
+                progressMap = new Map();
+                if (stats && stats.progress) {
+                    stats.progress.forEach(p => {
+                        if (p.courseId) progressMap.set(p.courseId, Math.round(p.completion || 0));
+                    });
+                }
+
+                renderAll();
+            } catch (err) {
+                console.error('Failed to load courses:', err);
+                showError('Could not load course data. Please refresh.');
+            }
+        }
+
+        function renderAll() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            const enrolled = allCourses.filter(c => enrolledIds.has(c.id) && (
+                (c.name || '').toLowerCase().includes(query) ||
+                (c.description || '').toLowerCase().includes(query)
+            ));
+
+            const available = allCourses.filter(c => !enrolledIds.has(c.id) && (
+                (c.name || '').toLowerCase().includes(query) ||
+                (c.description || '').toLowerCase().includes(query)
+            ));
+
+            document.getElementById('enrolledCount').textContent = enrolled.length;
+            renderGrid('enrolledGrid', enrolled, true);
+
+            document.getElementById('availableCount').textContent = available.length;
+            renderGrid('availableGrid', available, false);
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderGrid(gridId, courses, isEnrolled) {
+            const grid = document.getElementById(gridId);
+            if (!courses.length) {
+                grid.innerHTML = `<div class="empty-section" style="grid-column:1/-1;">${isEnrolled ? 'You have not enrolled in any courses yet.' : 'No courses available right now.'}</div>`;
+                return;
+            }
+            grid.innerHTML = courses.map((c, i) => {
+                const gradient = COURSE_GRADIENTS[i % COURSE_GRADIENTS.length];
+                const icon = COURSE_ICONS[i % COURSE_ICONS.length];
+                const aiModeBadge = c.aiMode
+                    ? `<div class="course-ai-badge"><i data-lucide="bot"></i> ${escHtml(c.aiMode)}</div>`
+                    : '';
+
+                // Use real progress from progressMap for enrolled courses
+                const progress = isEnrolled ? (progressMap.get(c.id) ?? 0) : null;
+
+                return `
+                    <div class="course-card">
+                        <div class="course-card-header" style="background:${gradient};">
+                            <div class="course-icon-wrap"><i data-lucide="${icon}"></i></div>
+                            ${aiModeBadge}
+                            <div class="course-card-name-overlay">${escHtml(c.name)}</div>
+                        </div>
+                        <div class="course-card-body">
+                            <div class="course-card-desc">${escHtml(c.description || 'No description provided.')}</div>
+                            <div class="course-meta">
+                                <div class="course-meta-item"><i data-lucide="book"></i> ${escHtml(c.subject?.name || 'N/A')}</div>
+                                <div class="course-meta-item"><i data-lucide="users"></i> ${escHtml(c.academicClass?.name || 'N/A')}</div>
+                                ${typeof c.lessonCount === 'number'
+                        ? `<div class="course-meta-item"><i data-lucide="book-open"></i> ${c.lessonCount} lessons</div>`
+                        : ''}
+                            </div>
+                            ${progress !== null ? `
+                                <div class="course-progress">
+                                    <div class="course-progress-label">
+                                        <span>Progress</span>
+                                        <span>${progress}%</span>
+                                    </div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;"></div></div>
+                                </div>
+                            ` : ''}
+                            <div class="course-card-actions">
+                                ${isEnrolled
+                        ? `<span class="btn-enrolled"><i data-lucide="check-circle"></i> Enrolled</span>`
+                        : `<button class="btn btn-primary btn-sm" style="flex:1;" onclick="enroll('${c.id}')">
+                                           <i data-lucide="plus" style="width:12px;height:12px;"></i> Enroll Now
+                                       </button>`
+                    }
+                                <a href="/ai-tutor.html?courseId=${c.id}&courseName=${encodeURIComponent(c.name)}" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="bot" style="width:12px;height:12px;"></i> AI Tutor
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function enroll(courseId) {
+            try {
+                await enrollInCourse(courseId);
+                showSuccess('Successfully enrolled!');
+                enrolledIds.add(courseId);
+                renderAll();
+            } catch (err) {
+                showError(err.message || 'Enrollment failed.');
+            }
+        }
+
+
+
+        function filterCourses() { renderAll(); }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        loadPage();
+    </script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
+
+</html>
